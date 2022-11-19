@@ -1,9 +1,15 @@
-import corpus
+import pathmap
+
 import numpy as np
 
 from numpy.random import default_rng
 from nptyping import NDArray, Shape, Int, Unicode
-# going to use numba or cython if the project becomes too complex
+from smart_open import open
+
+class Corpus:
+	def __iter__(self):
+		for line in open("corpus/corpus_minimal.txt"):
+			yield line.lower().split()
 
 rng = default_rng()
 
@@ -27,25 +33,73 @@ def pop_init(p_size: int) -> NDArray[Shape["P_size, 35"], Unicode]:
 
 
 # as the name suggests it will calculate fitness score for each chromosome
-def calc_fitness(pop: NDArray[Shape["P_size, 35"], Unicode], p_size: int) -> NDArray[Shape["*"], Int]:
+def calc_fitness(pop: NDArray[Shape["P_size, 35"], Unicode], p_size: int) -> dict:
 	# key_bias = np.array([[4, 2, 2, 2.5, 3.5, 5, 2.5, 2, 2, 3.5, 4.5, 4.5], [1.5, 1, 1, 1, 2.5, 2.5, 1, 1, 1, 1.5, 3, 3], [3.5, 4, 3, 2.5, 2, 2.5, 2, 2.5, 3, 4, 3.5]])
-	# key_distance = np.array([[1.032, 1.032, 1.032, 1.032, ], [], []])
-	# calculate the distance for the word "hello world"
-	"""
-	scr_list = np.empty(0)
+	scr_list = {}
 
-	for i in range(p_size):
+	for p in range(p_size):
 
+		print("pop:", p)
 		corpus = Corpus()
-		current = np.array([pop[i,:12], pop[i,12:24], pop[i,24:]], dtype=object)
-		for v in corpus:
-			# TODO: implement this
+		chr = np.stack((pop[p,:12], pop[p,12:24], np.concatenate((pop[p,24:], np.array([np.nan])))))
+		path_map = pathmap.mapgen(chr)
+
+		distance = 0
+		last_reg = -1
+		for ind, doc in enumerate(corpus):
+			print("corpus: ", ind)
+			print("total dist:", distance)
+			for w in doc:
+				for c in w:
+					try:
+						cur_idy = np.where(chr==c)[0][0]
+						cur_idx = np.where(chr==c)[1][0]
+					except IndexError:
+						continue
+
+					if cur_idy == 2 and cur_idx >= 6:
+						region = cur_idx - 1
+					else:
+						region = cur_idx
+
+					match region:
+						case 0:
+							start_x = 0
+						case 1:
+							start_x = 1
+						case 2:
+							start_x = 2
+						case 3 | 4:
+							start_x = 3
+						case 5 | 6:
+							start_x = 6
+						case 7:
+							start_x = 7
+						case 8:
+							start_x = 8
+						case _:
+							start_x = 9
+
+					if last_reg == region:
+						if chr[last_y,last_x] == c:
+							continue
+
+						distance += path_map[chr[last_y,last_x]][c]
+						last_x = cur_idx
+						last_y = cur_idy
+					else:
+						last_reg = region
+						last_x = cur_idx
+						last_y = cur_idy
+						if chr[1,start_x] == c:
+							continue
+
+						distance += path_map[chr[1,start_x]][c]
 
 
-		# scr_list = np.append(scr_list, )
+		scr_list.update({distance: p})
 
-	return scr_list """
-	pass
+	return scr_list
 
 # when used, will swap some genes
 def mutate(chr: NDArray[Shape["35"], Unicode]) -> NDArray[Shape["35"], Unicode]:
@@ -63,23 +117,13 @@ def crossover(chr1, chr2):
 def next_iter():
 	pass
 
-
-# might change how i store these later
-# gene_pool = np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"])
-# alphabet_ext = np.array([",", ".", "<", ">", "/", "?", ":", ";", "[", "]", "{", "}", "\'", "\"", "\\", "|"])
-
 # tests
 pop = pop_init(10)
 
-print(pop, "\n")
-print(pop[0])
+print(pop)
 
-test = np.array([pop[0,:12], pop[0,12:24], pop[0,24:]], dtype=object)
-print(test[0])
-print(test[1])
-print(test[2])
-#print(np.where(test=="h")[0])
-#print(type(corpus.dictionary))
+scr_list = calc_fitness(pop, 10)
 
+print(scr_list)
 
 
