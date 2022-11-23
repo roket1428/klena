@@ -132,7 +132,7 @@ gene_ext = list(",.<>/?:;[]{}()|\\'\"")
 
 pop = np.empty((0, 35), 'U')
 
-text = "the quick fox jumps over the lazy dog"
+text = "the quick brown fox jumps over the lazy dog"
 
 for _ in range(10):
 	current = np.array(np.concatenate((gene_pool, rng.choice(gene_ext, size=9, replace=False))), ndmin=2)
@@ -153,7 +153,7 @@ path_map = mapgen(p)
 distance = 0
 last_reg = -1
 
-for word in text.split(' '):
+for word in text.split():
 	for c in word:
 
 		print("char:", c)

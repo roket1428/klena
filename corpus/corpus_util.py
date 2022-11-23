@@ -37,5 +37,5 @@ def minimalize(corpus, len):
 
 corpus = Corpus()
 
-minimalize(corpus, 50)
+minimalize(corpus, 10)
 
