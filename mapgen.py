@@ -1,4 +1,22 @@
-def mapgen(p):
+# common biagram percentage map
+biag_map = {
+	"th": 3.56, "of": 1.17, "io": 0.83,
+	"he": 3.07, "ed": 1.17, "le": 0.83,
+	"in": 2.43, "is": 1.13, "ve": 0.83,
+	"er": 2.05, "it": 1.12, "co": 0.79,
+	"an": 1.99, "al": 1.09, "me": 0.79,
+	"re": 1.85, "ar": 1.07, "de": 0.76,
+	"on": 1.76, "st": 1.05, "hi": 0.76,
+	"at": 1.49, "to": 1.05, "ri": 0.73,
+	"en": 1.45, "nt": 1.04, "ro": 0.73,
+	"nd": 1.35, "ng": 0.95, "ic": 0.70,
+	"ti": 1.34, "se": 0.93, "ne": 0.69,
+	"es": 1.34, "ha": 0.93, "ea": 0.69,
+	"or": 1.28, "as": 0.87, "ra": 0.69,
+	"te": 1.20, "ou": 0.87, "ce": 0.65
+}
+
+def path_mapgen(p):
 	# undirectional weighted graph for distance calculation
 	path_map = {
 				# left hand

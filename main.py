@@ -1,7 +1,7 @@
 #import cProfile, pstats, io
 #from pstats import SortKey
 
-import pathmap
+import mapgen
 
 import numpy as np
 
@@ -21,7 +21,7 @@ rng = default_rng()
 # population initializer
 def pop_init(p_size):
 	gene_pool = list("abcdefghijklmnopqrstuvwxyz")
-	gene_ext = list(",.<>/?:;[]{}()|\\'\"")
+	gene_ext = list(",.<>/?:;[]{}\\()|\'\"")
 
 	# every layout has 35 keys total
 	pop = np.empty((0, 35), 'U')
@@ -38,42 +38,11 @@ def pop_init(p_size):
 
 
 # as the name suggests it will calculate fitness score for each chromosome
+#@profile
 def calc_fitness(pop, p_size):
 
 	# biagram list
-	biag_map = {
-		"th": 3.56, "of": 1.17, "io": 0.83,
-		"he": 3.07, "ed": 1.17, "le": 0.83,
-		"in": 2.43, "is": 1.13, "ve": 0.83,
-		"er": 2.05, "it": 1.12, "co": 0.79,
-		"an": 1.99, "al": 1.09, "me": 0.79,
-		"re": 1.85, "ar": 1.07, "de": 0.76,
-		"on": 1.76, "st": 1.05, "hi": 0.76,
-		"at": 1.49, "to": 1.05, "ri": 0.73,
-		"en": 1.45, "nt": 1.04, "ro": 0.73,
-		"nd": 1.35, "ng": 0.95, "ic": 0.70,
-		"ti": 1.34, "se": 0.93, "ne": 0.69,
-		"es": 1.34, "ha": 0.93, "ea": 0.69,
-		"or": 1.28, "as": 0.87, "ra": 0.69,
-		"te": 1.20, "ou": 0.87, "ce": 0.65
-	}
-
-	biag_keys = np.array([
-		"th", "of", "io",
-		"he", "ed", "le",
-		"in", "is", "ve",
-		"er", "it", "co",
-		"an", "al", "me",
-		"re", "ar", "de",
-		"on", "st", "hi",
-		"at", "to", "ri",
-		"en", "nt", "ro",
-		"nd", "ng", "ic",
-		"ti", "se", "ne",
-		"es", "ha", "ea",
-		"or", "as", "ra",
-		"te", "ou", "ce"
-	])
+	biag_map = mapgen.biag_map
 
 	# key pressing difficulity map according to experiments/assets/heatmap.png
 	key_bias = np.stack([
@@ -87,27 +56,30 @@ def calc_fitness(pop, p_size):
 
 	scr_list = {}
 
+	# for every population member
 	for p in range(p_size):
 
 		print("pop:", p)
 		corpus = Corpus()
-		chr = np.stack((pop[p,:12], pop[p,12:24], np.concatenate((pop[p,24:], np.array([np.nan])))))
-		path_map = pathmap.mapgen(chr)
+		chr = np.append(pop[p], [np.nan]).reshape(3,12)
+
+		path_map = mapgen.path_mapgen(chr)
+
+		chr_cord = {}
+		for i in range(chr.shape[0]):
+			for j in range(chr.shape[1]):
+				chr_cord.update({chr[i,j]: { 0: i, 1: j}})
 
 		distance = 0
 		last_reg = last_y = last_x = last_hand = -1
-		for ind, doc in enumerate(corpus):
-			print("corpus: ", ind)
+		for doc in corpus:
 			print("total dist:", distance)
+
 			for w in doc:
 				for c in w:
 
-					# ignore the genes that are not in the pool for now
-					try:
-						cur_idy = np.where(chr==c)[0][0]
-						cur_idx = np.where(chr==c)[1][0]
-					except IndexError:
-						continue
+					cur_idy = chr_cord[c][0]
+					cur_idx = chr_cord[c][1]
 
 					if cur_idy == 2 and cur_idx >= 6:
 						region = cur_idx - 1
@@ -152,7 +124,7 @@ def calc_fitness(pop, p_size):
 					else:
 						if last_y != -1:
 							biag = f"{chr[last_y,last_x]}{c}"
-							if biag in biag_keys and last_y == cur_idy:
+							if biag_map.get(biag) != None and last_y == cur_idy:
 								distance -= (biag_map[biag]** 2)
 
 						if chr[1,start_x] == c:
@@ -183,6 +155,12 @@ def mutate(chr):
 
 # main function to combine two chromosomes
 def crossover(chr1, chr2):
+
+	#co_side = rng.intergers(0,2)
+
+	#if co_side == True:
+	#	for c in chr
+	#else:
 	pass
 
 # create next generation by combining fittest chromosomes
