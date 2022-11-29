@@ -7,6 +7,7 @@ import numpy as np
 
 from numpy.random import default_rng
 from smart_open import open
+from collections import Counter
 
 #pr = cProfile.Profile()
 #pr.enable()
@@ -156,12 +157,61 @@ def mutate(chr):
 # main function to combine two chromosomes
 def crossover(chr1, chr2):
 
-	#co_side = rng.intergers(0,2)
+	# 0 left, 1 right
+	# side = rng.integers(0,2)
+	# print("side:", side)
+	side = 0
 
-	#if co_side == True:
-	#	for c in chr
-	#else:
-	pass
+	gene_pool = chr1.ravel()
+
+	chr1_lhalf = np.stack((chr1[0,:5], chr1[1,:5], chr1[2,:5]))
+	chr1_rhalf = np.stack((chr1[0,5:], chr1[1,5:], chr1[2,5:]))
+
+	chr2_lhalf = np.stack((chr2[0,:5], chr2[1,:5], chr2[2,:5]))
+	chr2_rhalf = np.stack((chr2[0,5:], chr2[1,5:], chr2[2,5:]))
+
+	if side == 1:
+		rem_pool = chr1_rhalf.ravel()
+		chr2_pool = np.empty((0,2), dtype='U')
+		chr1_rhalf_out = chr1_rhalf.copy()
+		chr1_rhalf_out[:] = "_"
+
+		for i in range(chr1_rhalf.shape[0]):
+			for j in range(chr1_rhalf.shape[1]):
+				if chr2_rhalf[i,j] in rem_pool:
+					chr1_rhalf_out[i,j] = chr2_rhalf[i,j]
+					chr2_pool = np.append(chr2_pool, chr2_rhalf[i,j])
+
+		diff_pool = [x for x in rem_pool if x not in chr2_pool]
+		for i in range(chr1_rhalf.shape[0]):
+			for j in range(chr1_rhalf.shape[1]):
+				if chr1_rhalf_out[i,j] == "_":
+					chr1_rhalf_out[i,j] = diff_pool[rng.integers(0, len(diff_pool))]
+					diff_pool.pop(diff_pool.index(chr1_rhalf_out[i,j]))
+		chr1_rhalf = chr1_rhalf_out
+	else:
+
+		rem_pool = chr1_lhalf.ravel()
+		chr2_pool = np.empty((0,2), dtype='U')
+		chr1_lhalf_out = chr1_lhalf.copy()
+		chr1_lhalf_out[:] = "_"
+
+		for i in range(chr1_lhalf.shape[0]):
+			for j in range(chr1_lhalf.shape[1]):
+				if chr2_lhalf[i,j] in rem_pool:
+					chr1_lhalf_out[i,j] = chr2_lhalf[i,j]
+					chr2_pool = np.append(chr2_pool, chr2_lhalf[i,j])
+
+		diff_pool = [x for x in rem_pool if x not in chr2_pool]
+		for i in range(chr1_lhalf.shape[0]):
+			for j in range(chr1_lhalf.shape[1]):
+				if chr1_lhalf_out[i,j] == "_":
+					chr1_lhalf_out[i,j] = diff_pool[rng.integers(0, len(diff_pool))]
+					diff_pool.pop(diff_pool.index(chr1_lhalf_out[i,j]))
+		chr1_lhalf = chr1_lhalf_out
+
+
+	return np.concatenate((chr1_lhalf, chr1_rhalf), axis=1)
 
 # create next generation by combining fittest chromosomes
 def next_iter():
@@ -169,12 +219,35 @@ def next_iter():
 
 # tests
 pop = pop_init(10)
-
 print(pop)
 
-scr_list = calc_fitness(pop, 10)
+chr1 = np.append(pop[0], [np.nan]).reshape(3,12)
+chr2 = np.append(pop[1], [np.nan]).reshape(3,12)
 
-print(scr_list)
+print("crossover testing")
+co = crossover(chr1, chr2)
+print(chr1)
+print(f"\n{chr2}\n")
+print(co)
+print(Counter(co.ravel().tolist()))
+
+# crossover test
+# for i in range(10000):
+# 	print("i:",i)
+# 	pop = pop_init(10)
+# 	for _ in range(10):
+# 		chr1 = np.append(pop[rng.integers(0,10)], [np.nan]).reshape(3,12)
+# 		chr2 = np.append(pop[rng.integers(0,10)], [np.nan]).reshape(3,12)
+# 		co = crossover(chr1, chr2)
+# 		for x in Counter(co.ravel().tolist()).values():
+# 			if x != 1:
+# 				print(Counter(co.ravel().tolist()))
+# 				raise AssertionError
+
+
+#scr_list = calc_fitness(pop, 10)
+#
+#print(scr_list)
 
 #pr.disable()
 #s = io.StringIO()

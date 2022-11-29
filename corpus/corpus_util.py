@@ -32,11 +32,17 @@ def minimalize(corpus, len):
 		for i, w in enumerate(corpus):
 			if i == len:
 				break
-			c_out = []
+			#c_out = []
+			c_out = ""
 			gene_list = list("abcdefghijklmnopqrstuvwxyz,.<>/?:;[]{}\\()|\'\"")
 			words = word_tokenize(w[0])
 			for word in words:
-				c_out += [c for c in word if c in gene_list]
+				#c_out += [c for c in word if c in gene_list]
+				for c in word:
+					if c not in gene_list:
+						continue
+					c_out = f"{c_out}{c}"
+				c_out = f"{c_out} "
 			out_f.write(bytes(''.join(c_out), 'utf-8').decode('utf-8') + '\n')
 
 
