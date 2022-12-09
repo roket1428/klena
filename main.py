@@ -21,18 +21,21 @@ rng = default_rng()
 
 # population initializer
 def pop_init(p_size):
-	gene_pool = list("abcdefghijklmnopqrstuvwxyz")
-	gene_ext = list(",.<>/?:;[]{}\\()|\'\"")
+	gene_pool = list("abcdefghijklmnopqrstuvwxyz[];\',./<\\") # [ ] ; ' \ , . / <
+	#gene_ext = list(",.<>/?:;[]{}\\()|\'\"")
 
-	# every layout has 35 keys total
-	pop = np.empty((0, 35), 'U')
+	# every layout has 35 keys total + padding
+	pop = np.empty((0, 36), 'U')
 
 	for _ in range(p_size):
 
 		# gene_pool is 26 characters long and that leaves 9 for the symbols (extras)
-		current = np.array(np.concatenate((gene_pool, rng.choice(gene_ext, size=9, replace=False))), ndmin=2)
+		#current = np.array(np.concatenate((gene_pool, rng.choice(gene_ext, size=9, replace=False))), ndmin=2)
+		current = np.array(gene_pool, ndmin=2)
 
 		rng.shuffle(current, axis=1)
+		current = np.array(np.pad(current[0], (0, 1), constant_values="-"), ndmin=2)
+
 		pop = np.concatenate((pop, current))
 
 	return pop
@@ -60,9 +63,9 @@ def calc_fitness(pop, p_size):
 	# for every population member
 	for p in range(p_size):
 
-		print("pop:", p)
+		#print("pop:", p)
 		corpus = Corpus()
-		chr = np.append(pop[p], [np.nan]).reshape(3,12)
+		chr = pop[p].reshape(3,12)
 
 		path_map = mapgen.path_mapgen(chr)
 
@@ -74,7 +77,7 @@ def calc_fitness(pop, p_size):
 		distance = 0
 		last_reg = last_y = last_x = last_hand = -1
 		for doc in corpus:
-			print("total dist:", distance)
+			#print("total dist:", distance)
 
 			for w in doc:
 				for c in w:
@@ -157,79 +160,88 @@ def mutate(chr):
 # main function to combine two chromosomes
 def crossover(chr1, chr2):
 
-	# 0 left, 1 right
-	# side = rng.integers(0,2)
-	# print("side:", side)
-	side = 0
+	rand_ind = rng.integers(0,34)
+	rand_len = rng.integers(0,34)
 
-	gene_pool = chr1.ravel()
+	chr_out = chr1.copy()
+	chr_out[:35] = "_"
 
-	chr1_lhalf = np.stack((chr1[0,:5], chr1[1,:5], chr1[2,:5]))
-	chr1_rhalf = np.stack((chr1[0,5:], chr1[1,5:], chr1[2,5:]))
+	for c in range(rand_len):
+		if rand_ind > 34:
+			rand_ind = 0
 
-	chr2_lhalf = np.stack((chr2[0,:5], chr2[1,:5], chr2[2,:5]))
-	chr2_rhalf = np.stack((chr2[0,5:], chr2[1,5:], chr2[2,5:]))
+		chr_out[rand_ind] = chr1[c]
+		rand_ind += 1
+	# print(f"rand_ind: {rand_ind}, char: {chr_out[rand_ind-1]}, rem: {len(chr_out)-rand_len}")
+	# print("chr_out after chr1:\n", chr_out)
 
-	if side == 1:
-		rem_pool = chr1_rhalf.ravel()
-		chr2_pool = np.empty((0,2), dtype='U')
-		chr1_rhalf_out = chr1_rhalf.copy()
-		chr1_rhalf_out[:] = "_"
+	chr2_index = 0
+	while "_" in chr_out:
+		if chr2_index > 34:
+			chr2_index = 0
+		if rand_ind > 34:
+			rand_ind = 0
 
-		for i in range(chr1_rhalf.shape[0]):
-			for j in range(chr1_rhalf.shape[1]):
-				if chr2_rhalf[i,j] in rem_pool:
-					chr1_rhalf_out[i,j] = chr2_rhalf[i,j]
-					chr2_pool = np.append(chr2_pool, chr2_rhalf[i,j])
+		if chr2[chr2_index] in chr_out:
+			chr2_index += 1
+			continue
 
-		diff_pool = [x for x in rem_pool if x not in chr2_pool]
-		for i in range(chr1_rhalf.shape[0]):
-			for j in range(chr1_rhalf.shape[1]):
-				if chr1_rhalf_out[i,j] == "_":
-					chr1_rhalf_out[i,j] = diff_pool[rng.integers(0, len(diff_pool))]
-					diff_pool.pop(diff_pool.index(chr1_rhalf_out[i,j]))
-		chr1_rhalf = chr1_rhalf_out
-	else:
+		chr_out[rand_ind] = chr2[chr2_index]
 
-		rem_pool = chr1_lhalf.ravel()
-		chr2_pool = np.empty((0,2), dtype='U')
-		chr1_lhalf_out = chr1_lhalf.copy()
-		chr1_lhalf_out[:] = "_"
+		chr2_index += 1
+		rand_ind += 1
 
-		for i in range(chr1_lhalf.shape[0]):
-			for j in range(chr1_lhalf.shape[1]):
-				if chr2_lhalf[i,j] in rem_pool:
-					chr1_lhalf_out[i,j] = chr2_lhalf[i,j]
-					chr2_pool = np.append(chr2_pool, chr2_lhalf[i,j])
-
-		diff_pool = [x for x in rem_pool if x not in chr2_pool]
-		for i in range(chr1_lhalf.shape[0]):
-			for j in range(chr1_lhalf.shape[1]):
-				if chr1_lhalf_out[i,j] == "_":
-					chr1_lhalf_out[i,j] = diff_pool[rng.integers(0, len(diff_pool))]
-					diff_pool.pop(diff_pool.index(chr1_lhalf_out[i,j]))
-		chr1_lhalf = chr1_lhalf_out
-
-
-	return np.concatenate((chr1_lhalf, chr1_rhalf), axis=1)
+	return chr_out
 
 # create next generation by combining fittest chromosomes
-def next_iter():
-	pass
+def next_iter(p_size):
+
+	pop = pop_init(p_size)
+
+	for i in range(10):
+
+		print("pass:", i)
+		scr_list = calc_fitness(pop, p_size)
+		#print("scr_list:",scr_list)
+		scr_sorted = np.sort([x for x in scr_list.keys()])
+		print("scr_sorted:",scr_sorted)
+		new_pop = np.empty((0,36), 'U')
+
+		for _ in range(p_size):
+			chr1 = pop[scr_list[scr_sorted[0]]]
+			chr2 = pop[scr_list[scr_sorted[1]]]
+
+			p_cros = crossover(chr1, chr2)
+
+			#rand_int = rng.integers(0,10)
+
+			if (rand_int := rng.integers(0,10)) == 1:
+				p_cros = mutate(p_cros)
+
+			#print("p_cros:", p_cros)
+			#print("newpop:", new_pop)
+			new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
+		#print(f"{p_c0}\n{p_c1}\n{p_cros}\n")
+
+		pop = new_pop
 
 # tests
-pop = pop_init(10)
-print(pop)
 
-chr1 = np.append(pop[0], [np.nan]).reshape(3,12)
-chr2 = np.append(pop[1], [np.nan]).reshape(3,12)
+next_iter(10)
 
-print("crossover testing")
-co = crossover(chr1, chr2)
-print(chr1)
-print(f"\n{chr2}\n")
-print(co)
-print(Counter(co.ravel().tolist()))
+#pop = pop_init(10)
+#co = crossover(pop[0], pop[1])
+#
+#print("chr1:\n", pop[0])
+#print("chr2:\n", pop[1])
+#print("chr_out:\n", co)
+
+#print("crossover testing")
+#co = crossover(chr1, chr2)
+#print(chr1)
+#print(f"\n{chr2}\n")
+#print(co)
+#print(Counter(co.ravel().tolist()))
 
 # crossover test
 # for i in range(10000):

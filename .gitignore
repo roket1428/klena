@@ -1,3 +1,5 @@
+.gitignore
+main1.py
 __pycache__
 corpus.txt
 *log*
