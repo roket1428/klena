@@ -15,9 +15,12 @@ class Corpus:
 		for line in open("corpus.txt"):
 			yield sent_tokenize(line)
 
-def normalize(corpus):
+def normalize(corpus, limit):
 	with open("corpus_fitered.txt", "w", encoding='utf-8') as out_f:
-		for w in corpus:
+		for i,w in enumerate(corpus):
+			if i == limit:
+				break
+			print("corpus:", i)
 			words = word_tokenize(w[0])
 			stop_words = set(stopwords.words('english'))
 
@@ -27,26 +30,26 @@ def normalize(corpus):
 
 			out_f.write(bytes(out, 'utf-8').decode('utf-8') + '\n')
 
-def minimalize(corpus, len):
-	with open("corpus_minimal.txt", "w", encoding='utf-8') as out_f:
-		for i, w in enumerate(corpus):
-			if i == len:
-				break
-			#c_out = []
-			c_out = ""
-			gene_list = list("abcdefghijklmnopqrstuvwxyz,.<>/?:;[]{}\\()|\'\"")
-			words = word_tokenize(w[0])
-			for word in words:
-				#c_out += [c for c in word if c in gene_list]
-				for c in word:
-					if c not in gene_list:
-						continue
-					c_out = f"{c_out}{c}"
-				c_out = f"{c_out} "
-			out_f.write(bytes(''.join(c_out), 'utf-8').decode('utf-8') + '\n')
+def minimalize(corpus, limit):
+	with open("corpus_fitered.txt", encoding='utf-8') as in_f:
+		with open("corpus_minimal.txt", "w", encoding='utf-8') as out_f:
+			for i, w in enumerate(in_f):
+				if i == limit:
+					break
+				c_out = ""
+				gene_pool = list("abcdefghijklmnopqrstuvwxyz[];\',./<\\")
+				words = word_tokenize(w[:])
+				for word in words:
+					for c in word:
+						if c not in gene_pool:
+							continue
+						c_out = f"{c_out}{c}"
+					c_out = f"{c_out} "
+				out_f.write(bytes(''.join(c_out), 'utf-8').decode('utf-8') + '\n')
 
 
 corpus = Corpus()
 
+normalize(corpus, 1000)
 minimalize(corpus, 10)
 
