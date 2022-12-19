@@ -1,0 +1,1217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>870</width>
+    <height>660</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Project-e</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>870</width>
+     <height>660</height>
+    </size>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <layout class="QVBoxLayout" name="main_vertical_layout">
+      <item>
+       <widget class="PlotWidget" name="genVisualization">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="interactive">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="curChrLabelGrid">
+        <item row="2" column="0">
+         <widget class="QLabel" name="gen_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>current: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="5">
+         <widget class="QLineEdit" name="gen_value_box">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="placeholderText">
+           <string>generation</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLabel" name="mingen_label">
+          <property name="text">
+           <string>min: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="5">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="prog_start_btn">
+            <property name="text">
+             <string>start</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="prog_stop_btn">
+            <property name="text">
+             <string>stop</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="maxgen_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>max: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="lastgen_label">
+          <property name="text">
+           <string>last: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Preferred</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="2">
+         <widget class="QLabel" name="gencount_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>gen: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QProgressBar" name="progressBar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3">
+         <widget class="QPushButton" name="prog_save_btn">
+          <property name="text">
+           <string>save to file</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="key_layout">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetFixedSize</enum>
+        </property>
+        <item row="3" column="0">
+         <layout class="QHBoxLayout" name="row1">
+          <item>
+           <spacer name="rowSpacer1_1">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>30</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key12">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>a</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key13">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>s</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key14">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>d</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key15">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>f</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key16">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>g</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key17">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>h</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key18">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>j</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key19">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>k</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key20">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>l</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key21">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key22">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>'</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key23">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>\</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="0">
+         <layout class="QHBoxLayout" name="row2">
+          <item>
+           <widget class="QPushButton" name="key24">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>&lt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key25">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>z</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key26">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key27">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>c</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key28">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>v</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key29">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>b</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key30">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>n</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key31">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>m</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key32">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>,</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key33">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key34">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>/</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="rowSpacer2_0">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>50</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <spacer name="rowSpacer2_1">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>60</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <layout class="QHBoxLayout" name="row0">
+          <item>
+           <spacer name="rowSpacer0_0">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>10</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key0">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>q</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key1">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>w</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>e</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key3">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>r</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key4">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>t</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key5">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>y</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key6">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>u</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key7">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>i</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key8">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>o</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key9">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>p</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key10">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>[</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="key11">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: black;
+background-color: rgb(204, 204, 204);
+border-width: 1px;
+border-radius: 5px;
+border-color: black;
+padding: 4px;
+width: 54px;
+height: 54px;
+outline:none
+</string>
+            </property>
+            <property name="text">
+             <string>]</string>
+            </property>
+            <property name="key0" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="rowSpacer0_1">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Maximum</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>30</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

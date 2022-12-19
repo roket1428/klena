@@ -1,11 +1,21 @@
+# local modules
+import gui
 import mapgen
+import window
 
+# standart modules
 import mmap
+import sys
+
+# 3rd party libs
 import numpy as np
 
 from numpy.random import default_rng
 from smart_open import open
-#from collections import Counter
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+from pyqtgraph import PlotWidget
+
 
 rng = default_rng()
 
@@ -31,7 +41,7 @@ def pop_init(p_size):
 
 # as the name suggests it will calculate fitness score for each chromosome
 #@profile
-def calc_fitness(pop, p_size):
+def calc_fitness(ui, pop, p_size):
 
 	# biagram list
 	biag_map = mapgen.biag_map
@@ -55,6 +65,7 @@ def calc_fitness(pop, p_size):
 		for p in range(p_size):
 
 			print("pop:", p)
+			ui.update_progress.emit(int((100*(p+1))/p_size))
 			#corpus = Corpus()
 			chr = np.array(pop[p].reshape(3,12), bytes)
 
@@ -148,8 +159,6 @@ def crossover(chr1, chr2):
 
 		chr_out[rand_ind] = chr1[c]
 		rand_ind += 1
-	# print(f"rand_ind: {rand_ind}, char: {chr_out[rand_ind-1]}, rem: {len(chr_out)-rand_len}")
-	# print("chr_out after chr1:\n", chr_out)
 
 	chr2_index = 0
 	while "_" in chr_out:
@@ -170,16 +179,39 @@ def crossover(chr1, chr2):
 	return chr_out
 
 # create next generation by combining fittest chromosomes
-def next_iter(p_size):
+def next_iter(ui, gen_size):
 
+	p_size = 10
 	pop = pop_init(p_size)
 
-	for i in range(10):
+	lastgen_scr = 0
+	maxgen_scr = 0
+	mingen_scr = 9999999
+	for i in range(gen_size):
 
+		if ui.quit_flag:
+			print("finished")
+			return
+
+		ui.update_gencount.emit(i+1)
+		ui.update_lastgen.emit(lastgen_scr)
 		print("pass:", i)
-		scr_list = calc_fitness(pop, p_size)
-		#print("scr_list:",scr_list)
+		
+		scr_list = calc_fitness(ui, pop, p_size)
 		scr_sorted = np.sort([x for x in scr_list.keys()])
+		
+		ui.update_currgen.emit(scr_sorted[0])
+		if scr_sorted[0] < mingen_scr:
+			mingen_scr = scr_sorted[0]
+			ui.update_mingen.emit(mingen_scr)
+
+		if scr_sorted[-1] > maxgen_scr:
+			maxgen_scr = scr_sorted[-1]
+			ui.update_maxgen.emit(maxgen_scr)
+
+		ui.update_plot.emit(i, scr_sorted[0])
+		ui.update_keys.emit(pop[scr_list[scr_sorted[0]]][:-1])
+
 		print("scr_sorted:",scr_sorted)
 		new_pop = np.empty((0,36), 'U')
 
@@ -189,21 +221,20 @@ def next_iter(p_size):
 
 			p_cros = crossover(chr1, chr2)
 
-			#rand_int = rng.integers(0,10)
-
 			if (rand_int := rng.integers(0,10)) == 1:
 				p_cros = mutate(p_cros)
 
-			#print("p_cros:", p_cros)
-			#print("newpop:", new_pop)
 			new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
-		#print(f"{p_c0}\n{p_c1}\n{p_cros}\n")
 
 		pop = new_pop
+		lastgen_scr = scr_sorted[0]
 
-# tests
-
-next_iter(10)
+if __name__ == "__main__":
+	app = QtWidgets.QApplication(sys.argv)
+	MainWindow = QtWidgets.QMainWindow()
+	ui = window.setup_mainwindow(MainWindow, next_iter)
+	MainWindow.show()
+	sys.exit(app.exec_())
 
 #pop = pop_init(10)
 #co = crossover(pop[0], pop[1])
