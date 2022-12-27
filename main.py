@@ -226,7 +226,7 @@ class main_worker(QObject):
 		for i in range(gen_size):
 
 			if self.__stop:
-				self.send_saved.emit(mingen_scr, mingen_lyt)
+				self.send_saved.emit(self.mingen_scr, self.mingen_lyt)
 				return
 
 			self.update_gencount.emit(i+1)
