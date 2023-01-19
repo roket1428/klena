@@ -1,3 +1,19 @@
+#	project-e find most efficient keyboard layout using genetic algorithm
+#		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # local modules
 import gui
 from main import main_worker
@@ -37,7 +53,7 @@ class setup_mainwindow(QMainWindow):
 	def receive_saved(self, score, layout):
 		self.save_score = cp.copy(score)
 		self.save_layout = layout.copy()
-	
+
 	@pyqtSlot(float)
 	def event_worker_update_currgen(self, val):
 		self.ui.gen_label.setText("current: {:.0f}".format(val))
@@ -51,7 +67,7 @@ class setup_mainwindow(QMainWindow):
 	def event_worker_update_keys(self, keys):
 		for i,v in enumerate(keys):
 			self.ui.__dict__[f"key{i}"].setText(v)
-		
+
 	@pyqtSlot(float)
 	def event_worker_update_lastgen(self, val):
 		self.ui.lastgen_label.setText("last: {:.0f}".format(val))
@@ -70,7 +86,7 @@ class setup_mainwindow(QMainWindow):
 		self.gvplot_item.setDownsampling(mode='peak')
 		self.gvplot_item.setClipToView(True)
 		gvplot = self.gvplot_item.plot()
-		
+
 		if i == 0:
 			self.gendata = np.empty(100)
 
@@ -79,7 +95,7 @@ class setup_mainwindow(QMainWindow):
 			tmp = self.gendata
 			self.gendata = np.empty(self.gendata.shape[0] * 2)
 			self.gendata[:tmp.shape[0]] = tmp
-		
+
 		gvplot.setData(self.gendata[:i+1])
 
 	@pyqtSlot(int)
@@ -90,9 +106,9 @@ class setup_mainwindow(QMainWindow):
 	def event_worker_started(self):
 		print("worker started")
 
-		if self.runcount > 0:	
+		if self.runcount > 0:
 			self.gvplot_item.clear()
-		
+
 		self.runcount += 1
 		self.ui.prog_start_btn.setDisabled(True)
 		self.ui.prog_stop_btn.setEnabled(True)
@@ -113,20 +129,20 @@ class setup_mainwindow(QMainWindow):
 
 		# save layout and fitness score for the save file button
 		self.receive_saved(self.worker.mingen_scr, self.worker.mingen_lyt)
-		
+
 		self.thread.quit()
 		self.thread.wait()
 
 	def event_prog_start_btn_clicked(self):
-		
+
 		if self.ui.gen_value_box.text() == "":
 			return
-		
+
 		# create the worker and a qthread instance & move worker to thread
-		self.worker = main_worker(int(self.ui.gen_value_box.text()))	
+		self.worker = main_worker(int(self.ui.gen_value_box.text()))
 		self.thread = QThread()
 		self.worker.moveToThread(self.thread)
-	
+
 		self.worker.started.connect(self.event_worker_started)
 		self.worker.finished.connect(self.event_worker_finished)
 
@@ -147,7 +163,7 @@ class setup_mainwindow(QMainWindow):
 	def event_prog_stop_btn_clicked(self):
 		self.ui.gencount_label.setText("stopping...")
 		self.worker.stop()
-		
+
 	def event_prog_save_btn_clicked(self):
 
 		print("saving...")

@@ -1,0 +1,4 @@
+smart-open==6.2.0
+numpy==1.23.5
+pyqtgraph==0.13.1
+PyQt5==5.15.7

@@ -1,3 +1,19 @@
+#	project-e find most efficient keyboard layout using genetic algorithm
+#		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # local modules
 import gui
 import mapgen
@@ -45,7 +61,6 @@ class main_worker(QObject):
 		super(main_worker, self).__init__()
 		self.rng = default_rng()
 		self.__stop = False
-		self.__end = False
 		self.gen_size = gen_size
 
 	@pyqtSlot()
@@ -56,7 +71,7 @@ class main_worker(QObject):
 
 	def stop(self):
 		self.__stop = True
-	
+
 
 	# population initializer
 	def pop_init(self, p_size):
@@ -232,10 +247,10 @@ class main_worker(QObject):
 			self.update_gencount.emit(i+1)
 			self.update_lastgen.emit(lastgen_scr)
 			print("pass:", i)
-			
+
 			scr_list = self.calc_fitness(pop, p_size)
 			scr_sorted = np.sort([x for x in scr_list.keys()])
-			
+
 			self.update_currgen.emit(scr_sorted[0])
 			if scr_sorted[0] < self.mingen_scr:
 				self.mingen_scr = scr_sorted[0]
