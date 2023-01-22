@@ -1,5 +1,5 @@
-# project-e
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+# project-e [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 Find the most efficient keyboard layout using the genetic algorithm.
 
 ## How It Works?
