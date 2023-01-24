@@ -1,4 +1,4 @@
-#	project-e find most efficient keyboard layout using genetic algorithm
+#	project-e find the most efficient keyboard layout using the genetic algorithm
 #		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 import gui
 from main import main_worker
 
-# standart modules
+# standart libraries
 import copy as cp
 
 # 3rd party libraries
@@ -138,7 +138,7 @@ class setup_mainwindow(QMainWindow):
 		if self.ui.gen_value_box.text() == "":
 			return
 
-		# create the worker and a qthread instance & move worker to thread
+		# create the worker and a qthread instance and move the worker to the said instance
 		self.worker = main_worker(int(self.ui.gen_value_box.text()))
 		self.thread = QThread()
 		self.worker.moveToThread(self.thread)
@@ -146,7 +146,7 @@ class setup_mainwindow(QMainWindow):
 		self.worker.started.connect(self.event_worker_started)
 		self.worker.finished.connect(self.event_worker_finished)
 
-		#connect gui signals
+		# connect gui signals
 		self.worker.update_gencount.connect(self.event_worker_update_gencount)
 		self.worker.update_currgen.connect(self.event_worker_update_currgen)
 		self.worker.update_keys.connect(self.event_worker_update_keys)

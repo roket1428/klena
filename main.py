@@ -1,4 +1,4 @@
-#	project-e find most efficient keyboard layout using genetic algorithm
+#	project-e find the most efficient keyboard layout using the genetic algorithm
 #		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -19,23 +19,17 @@ import gui
 import mapgen
 import window
 
-# standart modules
+# standart libraries
 import mmap
 import sys
 
-# 3rd party libs
+# 3rd party libraries
 import numpy as np
-
 from numpy.random import default_rng
+
 from smart_open import open
 
-from PyQt5.QtCore import (
-	QObject,
-	QThread,
-	pyqtSignal,
-	pyqtSlot
-)
-
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from pyqtgraph import PlotWidget
@@ -109,7 +103,7 @@ class main_worker(QObject):
 
 		scr_list = {}
 
-		with open("corpus/corpus_minimal_stripped.txt", "r") as f:
+		with open("corpus/corpus_filtered.txt", "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
 			# for every population member

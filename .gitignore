@@ -1,10 +1,7 @@
-.gitignore
-main1.py
-__pycache__
-corpus.txt
 *log*
 *.lprof
-main-numba.py
-main-testing.py
-mapgennumba.py
+.gitignore
+__pycache__
+experiments/src
+corpus.txt
 layout.txt
