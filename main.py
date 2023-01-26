@@ -15,13 +15,15 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # local modules
-import gui
 import mapgen
 import window
 
 # standart libraries
 import mmap
 import sys
+import time
+
+from multiprocessing import Process, Manager
 
 # 3rd party libraries
 import numpy as np
@@ -29,10 +31,8 @@ from numpy.random import default_rng
 
 from smart_open import open
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QMainWindow
-
-from pyqtgraph import PlotWidget
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QApplication
 
 class main_worker(QObject):
 
@@ -88,8 +88,9 @@ class main_worker(QObject):
 
 	# as the name suggests it will calculate fitness score for each chromosome
 	def calc_fitness(self, pop, p_size):
+
 		# biagram list
-		biag_map = mapgen.biag_map
+		biagram_map = mapgen.biagram_map
 
 		# key pressing difficulity map according to experiments/assets/heatmap.png
 		key_bias = np.stack([
@@ -103,17 +104,17 @@ class main_worker(QObject):
 
 		scr_list = {}
 
+		processes = [None] * p_size
+		manager = Manager()
+		scores = manager.list([None] * p_size)
+
 		with open("corpus/corpus_filtered.txt", "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
 			# for every population member
 			for p in range(p_size):
 
-				print("pop:", p)
-				self.update_progress.emit(int((100*(p+1))/p_size))
-				#corpus = Corpus()
 				chr = np.array(pop[p].reshape(3,12), bytes)
-
 				path_map = mapgen.path_mapgen(chr)
 
 				chr_cord = {}
@@ -121,63 +122,13 @@ class main_worker(QObject):
 					for j in range(chr.shape[1]):
 						chr_cord.update({chr[i,j]: { 0: i, 1: j}})
 
-				distance = 0
-				last_reg = last_y = last_x = last_hand = -1
-				for c in corpus:
-					cur_idy = chr_cord[c][0]
-					cur_idx = chr_cord[c][1]
+				processes[p] = Process(target=f_score, args=(p, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bias, smf_bias))
+				processes[p].start()
 
-					if cur_idy == 2 and cur_idx >= 6:
-						region = cur_idx - 1
-					else:
-						region = cur_idx
-
-					if last_reg == region:
-
-						if chr[last_y,last_x] == c:
-							distance += (key_bias[last_y,last_x] + smf_bias)
-							continue
-
-						distance += (path_map[chr[last_y,last_x]][c]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
-						last_x = cur_idx
-						last_y = cur_idy
-					else:
-
-						if region < 5:
-							cur_hand = 0
-						else:
-							cur_hand = 1
-
-						if region == 4:
-							start_x = 3
-						elif region == 5:
-							start_x = 6
-						elif region > 9:
-							start_x = 9
-						else:
-							start_x = region
-
-						if last_y != -1:
-							biag = f"{chr[last_y,last_x]}{c}"
-							if biag_map.get(biag) != None and last_y == cur_idy:
-								distance -= (biag_map[biag]** 2)
-
-						if chr[1,start_x] == c:
-							distance += key_bias[1,start_x]
-							continue
-
-						if last_hand != -1 and last_hand != cur_hand:
-							distance -= (path_map[chr[1,start_x]][c] * 0.5)
-
-						distance += (path_map[chr[1,start_x]][c]*2 + key_bias[cur_idy,cur_idx])
-
-						last_hand = cur_hand
-						last_reg = region
-						last_x = cur_idx
-						last_y = cur_idy
-
-
-				scr_list.update({distance: p})
+		for i, p in enumerate(processes):
+			p.join()
+			scr_list.update({scores[i]: i})
+			self.update_progress.emit(int((100*(i+1))/p_size))
 
 		return scr_list
 
@@ -226,6 +177,7 @@ class main_worker(QObject):
 	# create next generation by combining fittest chromosomes
 	def next_iter(self, gen_size):
 
+		start = time.perf_counter()
 		p_size = 10
 		pop = self.pop_init(p_size)
 
@@ -267,13 +219,79 @@ class main_worker(QObject):
 
 				p_cros = self.crossover(chr1, chr2)
 
-				if (rand_int := self.rng.integers(0,10)) == 1:
+				if self.rng.integers(0,10) == 1:
 					p_cros = self.mutate(p_cros)
 
 				new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
 
 			pop = new_pop
 			lastgen_scr = scr_sorted[0]
+
+		finish = time.perf_counter()
+
+		print(f"Finished in ${finish-start}")
+
+
+def f_score(index, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bias, smf_bias):
+
+	print("pop:", index)
+	score = 0
+	last_reg = last_y = last_x = last_hand = -1
+	for c in corpus:
+		cur_idy = chr_cord[c][0]
+		cur_idx = chr_cord[c][1]
+
+		if cur_idy == 2 and cur_idx >= 6:
+			region = cur_idx - 1
+		else:
+			region = cur_idx
+
+		if last_reg == region:
+
+			if chr[last_y,last_x] == c:
+				score += (key_bias[last_y,last_x] + smf_bias)
+
+			else:
+				score += (path_map[chr[last_y,last_x]][c]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
+				last_x = cur_idx
+				last_y = cur_idy
+		else:
+
+			if region < 5:
+				cur_hand = 0
+			else:
+				cur_hand = 1
+
+			if region == 4:
+				start_x = 3
+			elif region == 5:
+				start_x = 6
+			elif region > 9:
+				start_x = 9
+			else:
+				start_x = region
+
+			if last_y != -1:
+				biagram = f"{chr[last_y,last_x]}{c}"
+				if biagram_map.get(biagram) != None and last_y == cur_idy:
+					score -= (biagram_map[biagram]** 2)
+
+			if chr[1,start_x] == c:
+				score += key_bias[1,start_x]
+
+			else:
+				if last_hand != -1 and last_hand != cur_hand:
+					score -= (path_map[chr[1,start_x]][c] * 0.5)
+
+				score += (path_map[chr[1,start_x]][c]*2 + key_bias[cur_idy,cur_idx])
+
+				last_hand = cur_hand
+				last_reg = region
+				last_x = cur_idx
+				last_y = cur_idy
+
+	scores[index] = score
+
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)

@@ -14,7 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-biag_map = {
+biagram_map = {
         "th": 3.56, "of": 1.17, "io": 0.83,
         "he": 3.07, "ed": 1.17, "le": 0.83,
         "in": 2.43, "is": 1.13, "ve": 0.83,
