@@ -20,8 +20,8 @@ Fitness score calculation simulates key presses while looping through the datase
 - GUI and the main logic is working.
 
 ## TODOs
-- Normalize and balance the fitness score.
-- Reduce the dataset size by using proper dimension reduction techniques.
-- Multi-core implementation of the fitness calculation function.
-- Fix indentation and naming inconsistencies.
-- Handle the command line arguments.
+- [ ] Normalize and balance the fitness score.
+- [x] <s>Reduce the dataset size by using proper dimension reduction techniques.</s>
+- [x] <s>Multi-core implementation of the fitness calculation function.</s>
+- [ ] Fix indentation and naming inconsistencies.
+- [ ] Handle the command line arguments.
