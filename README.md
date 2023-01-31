@@ -13,15 +13,17 @@ The project uses genetic algorithms' main principles.
 Fitness score calculation simulates key presses while looping through the dataset.
 - First, it calculates the finger travel distance by using a hard-coded weighted graph (assuming 8 fingers at the home row).
 - Then it checks for the [biagrams](https://en.wikipedia.org/wiki/Bigram "biagrams") and reduces the score accordingly.
-- After that the key bias (according to the physical locations of the keys) and the same finger bias (repetitive key presses) is added.
+- After that the key bias (according to the physical locations of the keys) and the same finger bias (repetitive usage of the same finger) is added.
 
 ## Status
 - Most features are implemented.
 - GUI and the main logic is working.
 
 ## TODOs
-- Normalize and balance the fitness score.
-- Reduce the dataset size by using proper dimension reduction techniques.
-- Multi-core implementation of the fitness calculation function.
-- Fix indentation and naming inconsistencies.
-- Handle the command line arguments.
+- [ ] Normalize and balance the fitness score.
+- [x] <s>Reduce the dataset size by using proper dimension reduction techniques.</s>
+- [x] <s>Multi-core implementation of the fitness calculation function.</s>
+- [ ] Fix indentation and naming inconsistencies.
+- [ ] Handle command line arguments.
+- [ ] Write unit tests.
+- [ ] Use proper logging methods.
