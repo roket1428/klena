@@ -31,7 +31,7 @@
   <property name="windowTitle">
    <string>Project-e</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
+  <widget class="QWidget" name="CentralWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
      <horstretch>0</horstretch>
@@ -46,9 +46,9 @@
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
-     <layout class="QVBoxLayout" name="main_vertical_layout">
+     <layout class="QVBoxLayout" name="MainVerticalLayout">
       <item>
-       <widget class="PlotWidget" name="genVisualization">
+       <widget class="PlotWidget" name="genPlot">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -67,9 +67,9 @@
        </widget>
       </item>
       <item>
-       <layout class="QGridLayout" name="curChrLabelGrid">
+       <layout class="QGridLayout" name="InfoGrid">
         <item row="2" column="0">
-         <widget class="QLabel" name="gen_label">
+         <widget class="QLabel" name="genCurrentLabel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -82,7 +82,7 @@
          </widget>
         </item>
         <item row="2" column="5">
-         <widget class="QLineEdit" name="gen_value_box">
+         <widget class="QLineEdit" name="genValueBox">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -95,23 +95,23 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QLabel" name="mingen_label">
+         <widget class="QLabel" name="genMinLabel">
           <property name="text">
            <string>min: 0</string>
           </property>
          </widget>
         </item>
         <item row="3" column="5">
-         <layout class="QHBoxLayout" name="horizontalLayout">
+         <layout class="QHBoxLayout" name="StartStopLayout">
           <item>
-           <widget class="QPushButton" name="prog_start_btn">
+           <widget class="QPushButton" name="startButton">
             <property name="text">
              <string>start</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="prog_stop_btn">
+           <widget class="QPushButton" name="stopButton">
             <property name="text">
              <string>stop</string>
             </property>
@@ -120,7 +120,7 @@
          </layout>
         </item>
         <item row="2" column="1">
-         <widget class="QLabel" name="maxgen_label">
+         <widget class="QLabel" name="genMaxLabel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -133,7 +133,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="lastgen_label">
+         <widget class="QLabel" name="genLastLabel">
           <property name="text">
            <string>last: 0</string>
           </property>
@@ -156,7 +156,7 @@
          </spacer>
         </item>
         <item row="2" column="2">
-         <widget class="QLabel" name="gencount_label">
+         <widget class="QLabel" name="genCountLabel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -182,7 +182,7 @@
          </widget>
         </item>
         <item row="3" column="3">
-         <widget class="QPushButton" name="prog_save_btn">
+         <widget class="QPushButton" name="saveButton">
           <property name="text">
            <string>save to file</string>
           </property>
@@ -191,7 +191,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QGridLayout" name="key_layout">
+       <layout class="QGridLayout" name="keyLayout">
         <property name="sizeConstraint">
          <enum>QLayout::SetFixedSize</enum>
         </property>

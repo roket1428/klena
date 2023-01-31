@@ -14,10 +14,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# local modules
-import mapgen
-import window
-
 # standart libraries
 import mmap
 import sys
@@ -34,47 +30,109 @@ from smart_open import open
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
-class main_worker(QObject):
+# local modules
+import mapgen
+import window
+
+class MainWorker(QObject):
 
 	# custom signals for updating gui
-	update_gencount = pyqtSignal(int)
-	update_currgen = pyqtSignal(float)
-	update_keys = pyqtSignal(np.ndarray)
-	update_lastgen = pyqtSignal(float)
-	update_mingen = pyqtSignal(float)
-	update_maxgen = pyqtSignal(float)
-	update_plot = pyqtSignal(int, float)
-	update_progress = pyqtSignal(int)
+	updateGenCount = pyqtSignal(int)
+	updateGenCurrent = pyqtSignal(float)
+	updateGenLast = pyqtSignal(float)
+	updateGenMin = pyqtSignal(float)
+	updateGenMax = pyqtSignal(float)
+	updateKeys = pyqtSignal(np.ndarray)
+	updatePlot = pyqtSignal(int, float)
+	updateProgressBar = pyqtSignal(int)
 
-	send_saved = pyqtSignal(float, np.ndarray)
+	sendSaved = pyqtSignal(float, np.ndarray)
 
 	finished = pyqtSignal()
 	started = pyqtSignal()
 
-	def __init__(self, gen_size):
-		super(main_worker, self).__init__()
+	def __init__(self, iter_size):
+		super(MainWorker, self).__init__()
+		self.iter_size = iter_size
 		self.rng = default_rng()
+		self.pop_size = 10
 		self.__stop = False
-		self.gen_size = gen_size
 
+	# start and stop functions for ui interaction
 	@pyqtSlot()
 	def work(self):
 		self.started.emit()
-		self.next_iter(self.gen_size)
+		self.main_loop(self.iter_size)
 		self.finished.emit()
 
 	def stop(self):
 		self.__stop = True
 
+	def main_loop(self, iter_size):
 
-	# population initializer
-	def pop_init(self, p_size):
+		start = time.perf_counter()
+
+		pop = self.pop_init()
+
+		self.gen_score_min = sys.maxsize
+		gen_score_max = 0
+		gen_score_last = 0
+		for i in range(iter_size):
+
+			if self.__stop:
+				self.sendSaved.emit(self.gen_score_min, self.gen_score_min_layout)
+				return
+
+			self.updateGenCount.emit(i+1)
+			self.updateGenLast.emit(gen_score_last)
+			print("pass:", i)
+
+			score_dict = self.calc_fitness(pop)
+			score_dict_keys_sorted = np.sort([x for x in score_dict.keys()])
+
+			self.updateGenCurrent.emit(score_dict_keys_sorted[0])
+			if score_dict_keys_sorted[0] < self.gen_score_min:
+				self.gen_score_min = score_dict_keys_sorted[0]
+				self.gen_score_min_layout = pop[score_dict[score_dict_keys_sorted[0]]].copy()
+				self.updateGenMin.emit(self.gen_score_min)
+
+			if score_dict_keys_sorted[-1] > gen_score_max:
+				gen_score_max = score_dict_keys_sorted[-1]
+				self.updateGenMax.emit(gen_score_max)
+
+			self.updatePlot.emit(i, score_dict_keys_sorted[0])
+			self.updateKeys.emit(pop[score_dict[score_dict_keys_sorted[0]]][:-1])
+
+			print("score_dict_keys_sorted:",score_dict_keys_sorted)
+			new_pop = np.empty((0,36), 'U')
+
+			for _ in range(self.pop_size):
+				chr1 = pop[score_dict[score_dict_keys_sorted[0]]]
+				chr2 = pop[score_dict[score_dict_keys_sorted[1]]]
+
+				p_cros = self.crossover(chr1, chr2)
+
+				if self.rng.integers(0,10) == 1:
+					p_cros = self.mutate(p_cros)
+
+				new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
+
+			pop = new_pop
+			gen_score_last = score_dict_keys_sorted[0]
+
+		finish = time.perf_counter()
+
+		print(f"Finished in {round(finish-start)}s")
+
+	# only called one time per run, creates a randomly generated population of self.pop_size
+	def pop_init(self):
+
 		gene_pool = list("abcdefghijklmnopqrstuvwxyz[];\',./<\\") # [ ] ; ' \ , . / <
 
 		# every layout has 35 keys total + padding
 		pop = np.empty((0, 36), 'U')
 
-		for _ in range(p_size):
+		for _ in range(self.pop_size):
 
 			# gene_pool is 26 characters long and that leaves 9 for the symbols (extras)
 			current = np.array(gene_pool, ndmin=2)
@@ -86,10 +144,8 @@ class main_worker(QObject):
 
 		return pop
 
-	# as the name suggests it will calculate fitness score for each chromosome
-	def calc_fitness(self, pop, p_size):
+	def calc_fitness(self, pop):
 
-		# biagram list
 		biagram_map = mapgen.biagram_map
 
 		# key pressing difficulity map according to experiments/assets/heatmap.png
@@ -99,40 +155,38 @@ class main_worker(QObject):
 							[3.5, 4, 4, 2.5,  1.5,    2, 1.5, 2.5, 3,   4,   4,   0]
 							])
 
-		# same finger biagram bias
 		smf_bias = 10
 
-		scr_list = {}
+		score_dict = {}
 
-		processes = [None] * p_size
+		processes = [None] * self.pop_size
 		manager = Manager()
-		scores = manager.list([None] * p_size)
+		scores = manager.list([None] * self.pop_size)
 
 		with open("corpus/corpus_filtered.txt", "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
-			# for every population member
-			for p in range(p_size):
+			for p in range(self.pop_size):
 
 				chr = np.array(pop[p].reshape(3,12), bytes)
 				path_map = mapgen.path_mapgen(chr)
 
-				chr_cord = {}
+				cord_map = {}
 				for i in range(chr.shape[0]):
 					for j in range(chr.shape[1]):
-						chr_cord.update({chr[i,j]: { 0: i, 1: j}})
+						cord_map.update({chr[i,j]: { 0: i, 1: j}})
 
-				processes[p] = Process(target=f_score, args=(p, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bias, smf_bias))
+				processes[p] = Process(target=calc_score, args=(p, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias))
 				processes[p].start()
 
 		for i, p in enumerate(processes):
 			p.join()
-			scr_list.update({scores[i]: i})
-			self.update_progress.emit(int((100*(i+1))/p_size))
+			score_dict.update({scores[i]: i})
+			self.updateProgressBar.emit(int((100*(i+1))/self.pop_size))
 
-		return scr_list
+		return score_dict
 
-	# when used, will swap some genes
+	# when used, will swap two consecutive elements inside array, at a random index
 	def mutate(self, chr):
 		# array length - 1 so it doesn't overflow
 		rnd_int = self.rng.integers(0, 34)
@@ -140,119 +194,63 @@ class main_worker(QObject):
 
 		return chr
 
-	# main function to combine two chromosomes
 	def crossover(self, chr1, chr2):
 
-		rand_ind = self.rng.integers(0,34)
-		rand_len = self.rng.integers(0,34)
+		rnd_idx = self.rng.integers(0,34)
+		rnd_len = self.rng.integers(0,34)
 
-		chr_out = chr1.copy()
-		chr_out[:35] = "_"
+		offspring = chr1.copy()
+		offspring[:35] = "_"
 
-		for c in range(rand_len):
-			if rand_ind > 34:
-				rand_ind = 0
+		for c in range(rnd_len):
+			if rnd_idx > 34:
+				rnd_idx = 0
 
-			chr_out[rand_ind] = chr1[c]
-			rand_ind += 1
+			offspring[rnd_idx] = chr1[c]
+			rnd_idx += 1
 
-		chr2_index = 0
-		while "_" in chr_out:
-			if chr2_index > 34:
-				chr2_index = 0
-			if rand_ind > 34:
-				rand_ind = 0
+		chr2_idx = 0
+		while "_" in offspring:
+			if chr2_idx > 34:
+				chr2_idx = 0
+			if rnd_idx > 34:
+				rnd_idx = 0
 
-			if chr2[chr2_index] in chr_out:
-				chr2_index += 1
+			if chr2[chr2_idx] in offspring:
+				chr2_idx += 1
 				continue
 
-			chr_out[rand_ind] = chr2[chr2_index]
+			offspring[rnd_idx] = chr2[chr2_idx]
 
-			chr2_index += 1
-			rand_ind += 1
+			chr2_idx += 1
+			rnd_idx += 1
 
-		return chr_out
-
-	# create next generation by combining fittest chromosomes
-	def next_iter(self, gen_size):
-
-		start = time.perf_counter()
-		p_size = 10
-		pop = self.pop_init(p_size)
-
-		lastgen_scr = 0
-		maxgen_scr = 0
-		self.mingen_scr = 9999999
-		for i in range(gen_size):
-
-			if self.__stop:
-				self.send_saved.emit(self.mingen_scr, self.mingen_lyt)
-				return
-
-			self.update_gencount.emit(i+1)
-			self.update_lastgen.emit(lastgen_scr)
-			print("pass:", i)
-
-			scr_list = self.calc_fitness(pop, p_size)
-			scr_sorted = np.sort([x for x in scr_list.keys()])
-
-			self.update_currgen.emit(scr_sorted[0])
-			if scr_sorted[0] < self.mingen_scr:
-				self.mingen_scr = scr_sorted[0]
-				self.mingen_lyt = pop[scr_list[scr_sorted[0]]].copy()
-				self.update_mingen.emit(self.mingen_scr)
-
-			if scr_sorted[-1] > maxgen_scr:
-				maxgen_scr = scr_sorted[-1]
-				self.update_maxgen.emit(maxgen_scr)
-
-			self.update_plot.emit(i, scr_sorted[0])
-			self.update_keys.emit(pop[scr_list[scr_sorted[0]]][:-1])
-
-			print("scr_sorted:",scr_sorted)
-			new_pop = np.empty((0,36), 'U')
-
-			for _ in range(p_size):
-				chr1 = pop[scr_list[scr_sorted[0]]]
-				chr2 = pop[scr_list[scr_sorted[1]]]
-
-				p_cros = self.crossover(chr1, chr2)
-
-				if self.rng.integers(0,10) == 1:
-					p_cros = self.mutate(p_cros)
-
-				new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
-
-			pop = new_pop
-			lastgen_scr = scr_sorted[0]
-
-		finish = time.perf_counter()
-
-		print(f"Finished in ${finish-start}")
+		return offspring
 
 
-def f_score(index, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bias, smf_bias):
+
+def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias):
 
 	print("pop:", index)
 	score = 0
-	last_reg = last_y = last_x = last_hand = -1
-	for c in corpus:
-		cur_idy = chr_cord[c][0]
-		cur_idx = chr_cord[c][1]
+	last_region = last_y = last_x = last_hand = -1
+	for char in corpus:
+
+		cur_idy = cord_map[char][0]
+		cur_idx = cord_map[char][1]
 
 		if cur_idy == 2 and cur_idx >= 6:
 			region = cur_idx - 1
 		else:
 			region = cur_idx
 
-		if last_reg == region:
+		if last_region == region:
 
-			if chr[last_y,last_x] == c:
+			if chr[last_y,last_x] == char:
 				score += (key_bias[last_y,last_x] + smf_bias)
 
 			else:
-				score += (path_map[chr[last_y,last_x]][c]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
+				score += (path_map[chr[last_y,last_x]][char]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
 				last_x = cur_idx
 				last_y = cur_idy
 		else:
@@ -272,21 +270,21 @@ def f_score(index, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bia
 				start_x = region
 
 			if last_y != -1:
-				biagram = f"{chr[last_y,last_x]}{c}"
+				biagram = f"{chr[last_y,last_x]}{char}"
 				if biagram_map.get(biagram) != None and last_y == cur_idy:
 					score -= (biagram_map[biagram]** 2)
 
-			if chr[1,start_x] == c:
+			if chr[1,start_x] == char:
 				score += key_bias[1,start_x]
 
 			else:
 				if last_hand != -1 and last_hand != cur_hand:
-					score -= (path_map[chr[1,start_x]][c] * 0.5)
+					score -= (path_map[chr[1,start_x]][char] * 0.5)
 
-				score += (path_map[chr[1,start_x]][c]*2 + key_bias[cur_idy,cur_idx])
+				score += (path_map[chr[1,start_x]][char]*2 + key_bias[cur_idy,cur_idx])
 
 				last_hand = cur_hand
-				last_reg = region
+				last_region = region
 				last_x = cur_idx
 				last_y = cur_idy
 
@@ -296,7 +294,7 @@ def f_score(index, scores, chr, chr_cord, corpus, path_map, biagram_map, key_bia
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 
-	MainWindow = window.setup_mainwindow()
+	MainWindow = window.SetupMainwindow()
 	MainWindow.show()
 
 	sys.exit(app.exec_())

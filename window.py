@@ -14,10 +14,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# local modules
-import gui
-from main import main_worker
-
 # standart libraries
 import copy as cp
 
@@ -25,67 +21,78 @@ import copy as cp
 import numpy as np
 
 from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSlot
 
-# derived from auto generated qt-designer class
-class setup_ui(gui.Ui_MainWindow):
+# local modules
+import gui
+from main import MainWorker
+
+# inherited from auto generated qt-designer class to be used as an object in setup_mainwindow
+class UIObject(gui.Ui_MainWindow):
 
 	def __init__(self, MainWindow):
 		super().setupUi(MainWindow)
 
-class setup_mainwindow(QMainWindow):
+class SetupMainwindow(QMainWindow):
 
 	def __init__(self):
 		super().__init__()
 
-		self.ui = setup_ui(self)
+		self.ui = UIObject(self)
 
 		self.runcount = 0
+		self.ui.stopButton.setDisabled(True)
+		self.ui.saveButton.setDisabled(True)
 
-		self.ui.prog_stop_btn.setDisabled(True)
-		self.ui.prog_save_btn.setDisabled(True)
+		self.ui.startButton.clicked.connect(self.startButtonClicked)
+		self.ui.stopButton.clicked.connect(self.stopButtonClicked)
+		self.ui.saveButton.clicked.connect(self.saveButtonClicked)
 
-		self.ui.prog_start_btn.clicked.connect(self.event_prog_start_btn_clicked)
-		self.ui.prog_stop_btn.clicked.connect(self.event_prog_stop_btn_clicked)
-		self.ui.prog_save_btn.clicked.connect(self.event_prog_save_btn_clicked)
-
+	# signal: sendSaved
 	@pyqtSlot(float, np.ndarray)
-	def receive_saved(self, score, layout):
-		self.save_score = cp.copy(score)
-		self.save_layout = layout.copy()
+	def receiveSaved(self, score, layout):
+		self.savedscore = cp.copy(score)
+		self.savedlayout = layout.copy()
 
+	# signal: updateGenCurrent
 	@pyqtSlot(float)
-	def event_worker_update_currgen(self, val):
-		self.ui.gen_label.setText("current: {:.0f}".format(val))
+	def workerUpdateGenCurrent(self, val):
+		self.ui.genCurrentLabel.setText("current: {:.0f}".format(val))
 
+	# signal: updateGenCount
 	@pyqtSlot(int)
-	def event_worker_update_gencount(self, val):
+	def workerUpdateGenCount(self, val):
 		self.gencount = val
-		self.ui.gencount_label.setText(f"gen: {self.gencount}")
+		self.ui.genCountLabel.setText(f"gen: {self.gencount}")
 
+	# signal: updateKeys
 	@pyqtSlot(np.ndarray)
-	def event_worker_update_keys(self, keys):
+	def workerUpdateKeys(self, keys):
 		for i,v in enumerate(keys):
 			self.ui.__dict__[f"key{i}"].setText(v)
 
+	# signal: updateGenLast
 	@pyqtSlot(float)
-	def event_worker_update_lastgen(self, val):
-		self.ui.lastgen_label.setText("last: {:.0f}".format(val))
+	def workerUpdateGenLast(self, val):
+		self.ui.genLastLabel.setText("last: {:.0f}".format(val))
 
+	# signal: updateGenMin
 	@pyqtSlot(float)
-	def event_worker_update_mingen(self, val):
-		self.ui.mingen_label.setText("min: {:.0f}".format(val))
+	def workerUpdateGenMin(self, val):
+		self.ui.genMinLabel.setText("min: {:.0f}".format(val))
 
+	# signal: updateGenMax
 	@pyqtSlot(float)
-	def event_worker_update_maxgen(self, val):
-		self.ui.maxgen_label.setText("max: {:.0f}".format(val))
+	def workerUpdateGenMax(self, val):
+		self.ui.genMaxLabel.setText("max: {:.0f}".format(val))
 
+	# signal: updatePlot
 	@pyqtSlot(int, float)
-	def event_worker_update_plot(self, i, val):
-		self.gvplot_item = self.ui.genVisualization.getPlotItem()
-		self.gvplot_item.setDownsampling(mode='peak')
-		self.gvplot_item.setClipToView(True)
-		gvplot = self.gvplot_item.plot()
+	def workerUpdatePlot(self, i, val):
+		self.genPlotItem = self.ui.genPlot.getPlotItem()
+		self.genPlotItem.setDownsampling(mode='peak')
+		self.genPlotItem.setClipToView(True)
+		plot = self.genPlotItem.plot()
 
 		if i == 0:
 			self.gendata = np.empty(100)
@@ -96,78 +103,80 @@ class setup_mainwindow(QMainWindow):
 			self.gendata = np.empty(self.gendata.shape[0] * 2)
 			self.gendata[:tmp.shape[0]] = tmp
 
-		gvplot.setData(self.gendata[:i+1])
+		plot.setData(self.gendata[:i+1])
 
+	# signal: updateProgressBar
 	@pyqtSlot(int)
-	def event_worker_update_progress(self, val):
+	def workerUpdateProgress(self, val):
 		self.ui.progressBar.setValue(val)
 
+	# signal: started
 	@pyqtSlot()
-	def event_worker_started(self):
+	def workerStarted(self):
 		print("worker started")
 
 		if self.runcount > 0:
-			self.gvplot_item.clear()
+			self.genPlotItem.clear()
 
 		self.runcount += 1
-		self.ui.prog_start_btn.setDisabled(True)
-		self.ui.prog_stop_btn.setEnabled(True)
-		self.ui.prog_save_btn.setDisabled(True)
+		self.ui.startButton.setDisabled(True)
+		self.ui.stopButton.setEnabled(True)
+		self.ui.saveButton.setDisabled(True)
 
+	#signal: finished
 	@pyqtSlot()
-	def event_worker_finished(self):
+	def workerFinished(self):
 		print("worker finished")
 
-		# reset gencount and progressbar
-		self.ui.gencount_label.setText(f"gen: {self.gencount}")
+		self.ui.genCountLabel.setText(f"gen: {self.gencount}")
 		self.ui.progressBar.setValue(0)
 
-		# update button clickablity
-		self.ui.prog_start_btn.setEnabled(True)
-		self.ui.prog_stop_btn.setDisabled(True)
-		self.ui.prog_save_btn.setEnabled(True)
+		self.ui.startButton.setEnabled(True)
+		self.ui.stopButton.setDisabled(True)
+		self.ui.saveButton.setEnabled(True)
 
-		# save layout and fitness score for the save file button
-		self.receive_saved(self.worker.mingen_scr, self.worker.mingen_lyt)
+		self.receiveSaved(self.worker.gen_score_min, self.worker.gen_score_min_layout)
 
 		self.thread.quit()
 		self.thread.wait()
 
-	def event_prog_start_btn_clicked(self):
+	def startButtonClicked(self):
 
-		if self.ui.gen_value_box.text() == "":
+		if self.ui.genValueBox.text() == "":
 			return
 
 		# create the worker and a qthread instance and move the worker to the said instance
-		self.worker = main_worker(int(self.ui.gen_value_box.text()))
 		self.thread = QThread()
+		self.worker = MainWorker(int(self.ui.genValueBox.text()))
 		self.worker.moveToThread(self.thread)
 
-		self.worker.started.connect(self.event_worker_started)
-		self.worker.finished.connect(self.event_worker_finished)
+		self.worker.started.connect(self.workerStarted)
+		self.worker.finished.connect(self.workerFinished)
 
 		# connect gui signals
-		self.worker.update_gencount.connect(self.event_worker_update_gencount)
-		self.worker.update_currgen.connect(self.event_worker_update_currgen)
-		self.worker.update_keys.connect(self.event_worker_update_keys)
-		self.worker.update_lastgen.connect(self.event_worker_update_lastgen)
-		self.worker.update_mingen.connect(self.event_worker_update_mingen)
-		self.worker.update_maxgen.connect(self.event_worker_update_maxgen)
-		self.worker.update_plot.connect(self.event_worker_update_plot)
-		self.worker.update_progress.connect(self.event_worker_update_progress)
+		self.worker.updateGenCount.connect(self.workerUpdateGenCount)
+		self.worker.updateGenCurrent.connect(self.workerUpdateGenCurrent)
+		self.worker.updateKeys.connect(self.workerUpdateKeys)
+		self.worker.updateGenLast.connect(self.workerUpdateGenLast)
+		self.worker.updateGenMin.connect(self.workerUpdateGenMin)
+		self.worker.updateGenMax.connect(self.workerUpdateGenMax)
+		self.worker.updatePlot.connect(self.workerUpdatePlot)
+		self.worker.updateProgressBar.connect(self.workerUpdateProgress)
 
-		self.worker.send_saved.connect(self.receive_saved)
+		self.worker.sendSaved.connect(self.receiveSaved)
 		self.thread.started.connect(self.worker.work)
 		self.thread.start()
 
-	def event_prog_stop_btn_clicked(self):
-		self.ui.gencount_label.setText("stopping...")
+	def stopButtonClicked(self):
+		self.ui.genCountLabel.setText("stopping...")
 		self.worker.stop()
 
-	def event_prog_save_btn_clicked(self):
+	def saveButtonClicked(self):
 
 		print("saving...")
 		with open("layout.txt", "a", encoding='utf-8') as f:
 
-			f.write(f"\nscore:{self.save_score}")
-			f.write(f"\nlayout:{self.save_layout.reshape(3,12)}\n")
+			f.write(f"\nscore:{round(self.savedscore)}")
+			f.write(f"\nlayout:\n{self.savedlayout.reshape(3,12)}\n")
+		print("saved!")
+
