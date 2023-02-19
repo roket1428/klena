@@ -24,6 +24,6 @@ Fitness score calculation simulates key presses while looping through the datase
 - [x] <s>Reduce the dataset size by using proper dimension reduction techniques.</s>
 - [x] <s>Multi-core implementation of the fitness calculation function.</s>
 - [x] <s>Fix indentation and naming inconsistencies.</s>
-- [ ] Handle command line arguments.
+- [x] <s>Handle command line arguments.</s>
 - [ ] Write unit tests.
-- [ ] Use proper logging methods.
+- [x] <s>Use proper logging methods.</s>
