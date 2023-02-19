@@ -16,6 +16,8 @@
 
 # standart libraries
 import copy as cp
+import logging
+import pathlib
 
 # 3rd party libraries
 import numpy as np
@@ -35,18 +37,29 @@ class UIObject(gui.Ui_MainWindow):
 
 class SetupMainwindow(QMainWindow):
 
-	def __init__(self):
+	def __init__(self, iter_size=0, output=None, auto_save=False):
 		super().__init__()
 
 		self.ui = UIObject(self)
 
 		self.runcount = 0
+		self.output = output
+		self.auto_save = auto_save
+		self.iter_size = iter_size
+		self.log = logging.getLogger("__main__")
 		self.ui.stopButton.setDisabled(True)
 		self.ui.saveButton.setDisabled(True)
 
 		self.ui.startButton.clicked.connect(self.startButtonClicked)
 		self.ui.stopButton.clicked.connect(self.stopButtonClicked)
 		self.ui.saveButton.clicked.connect(self.saveButtonClicked)
+
+		if iter_size:
+			self.ui.genValueBox.setText(str(iter_size))
+			self.startButtonClicked()
+
+		if auto_save:
+			self.ui.saveButton.setText("auto-save on")
 
 	# signal: sendSaved
 	@pyqtSlot(float, np.ndarray)
@@ -113,7 +126,7 @@ class SetupMainwindow(QMainWindow):
 	# signal: started
 	@pyqtSlot()
 	def workerStarted(self):
-		print("worker started")
+		self.log.debug("worker started")
 
 		if self.runcount > 0:
 			self.genPlotItem.clear()
@@ -126,28 +139,33 @@ class SetupMainwindow(QMainWindow):
 	#signal: finished
 	@pyqtSlot()
 	def workerFinished(self):
-		print("worker finished")
+		self.log.debug("worker finished")
 
 		self.ui.genCountLabel.setText(f"gen: {self.gencount}")
 		self.ui.progressBar.setValue(0)
 
 		self.ui.startButton.setEnabled(True)
 		self.ui.stopButton.setDisabled(True)
-		self.ui.saveButton.setEnabled(True)
 
 		self.receiveSaved(self.worker.gen_score_min, self.worker.gen_score_min_layout)
+		if self.auto_save:
+			self.saveButtonClicked()
+		else:
+			self.ui.saveButton.setEnabled(True)
 
 		self.thread.quit()
 		self.thread.wait()
 
 	def startButtonClicked(self):
 
-		if self.ui.genValueBox.text() == "":
-			return
+		if not self.iter_size:
+			if self.ui.genValueBox.text() == "":
+				return
+			self.iter_size = int(self.ui.genValueBox.text())
 
 		# create the worker and a qthread instance and move the worker to the said instance
 		self.thread = QThread()
-		self.worker = MainWorker(int(self.ui.genValueBox.text()))
+		self.worker = MainWorker(self.iter_size)
 		self.worker.moveToThread(self.thread)
 
 		self.worker.started.connect(self.workerStarted)
@@ -172,11 +190,8 @@ class SetupMainwindow(QMainWindow):
 		self.worker.stop()
 
 	def saveButtonClicked(self):
-
-		print("saving...")
-		with open("layout.txt", "a", encoding='utf-8') as f:
-
-			f.write(f"\nscore:{round(self.savedscore)}")
-			f.write(f"\nlayout:\n{self.savedlayout.reshape(3,12)}\n")
-		print("saved!")
+		self.log.info(f"saving layout {self.savedscore} to {pathlib.Path(self.output).absolute()}")
+		with open(self.output, "a", encoding='utf-8') as f:
+			f.write(f"generations: {self.iter_size}\tscore: {round(self.savedscore)}\n")
+			f.write(f"best layout:\n{self.savedlayout.reshape(3,12)}\n")
 

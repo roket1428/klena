@@ -1,6 +1,7 @@
 *log*
 *.lprof
 .gitignore
+.vscode
 __pycache__
 experiments/src
 corpus.txt

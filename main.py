@@ -15,7 +15,10 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # standart libraries
+import argparse
 import mmap
+import logging
+import pathlib
 import sys
 import time
 
@@ -25,8 +28,6 @@ from multiprocessing import Process, Manager
 import numpy as np
 from numpy.random import default_rng
 
-from smart_open import open
-
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
@@ -34,76 +35,93 @@ from PyQt5.QtWidgets import QApplication
 import mapgen
 import window
 
-class MainWorker(QObject):
+class MainProgram(object):
 
-	# custom signals for updating gui
-	updateGenCount = pyqtSignal(int)
-	updateGenCurrent = pyqtSignal(float)
-	updateGenLast = pyqtSignal(float)
-	updateGenMin = pyqtSignal(float)
-	updateGenMax = pyqtSignal(float)
-	updateKeys = pyqtSignal(np.ndarray)
-	updatePlot = pyqtSignal(int, float)
-	updateProgressBar = pyqtSignal(int)
-
-	sendSaved = pyqtSignal(float, np.ndarray)
-
-	finished = pyqtSignal()
-	started = pyqtSignal()
-
-	def __init__(self, iter_size):
-		super(MainWorker, self).__init__()
-		self.iter_size = iter_size
-		self.rng = default_rng()
+	def __init__(self, output=None, auto_save=False):
+		super(MainProgram, self).__init__()
 		self.pop_size = 10
-		self.__stop = False
+		self.output = output
+		self.auto_save = auto_save
+		self.log = logging.getLogger("__main__")
+		self.rng = default_rng()
 
-	# start and stop functions for ui interaction
-	@pyqtSlot()
-	def work(self):
-		self.started.emit()
-		self.main_loop(self.iter_size)
-		self.finished.emit()
+	def action_gen_count(self, val):
+		self.log.info(f"iter: {val}")
 
-	def stop(self):
-		self.__stop = True
+	def action_gen_last(self, val):
+		self.log.debug(f"last min:\t{val}")
 
-	def main_loop(self, iter_size):
+	def action_gen_current(self, val):
+		self.log.debug(f"current min:\t{val}")
 
-		start = time.perf_counter()
+	def action_gen_min(self, val):
+		self.log.debug(f"all time min:\t{val}")
+
+	def action_gen_max(self, val):
+		self.log.debug(f"all time max:\t{val}")
+
+	def action_save_prompt(self, i, val):
+		if not self.auto_save:
+			ans = input(f"save layout {val}? [y/N]")
+			if ans.lower() != "y":
+				return
+		self.log.info(f"saving layout {self.gen_score_min} to {pathlib.Path(self.output).absolute()}")
+		with open(self.output, "a", encoding='utf-8') as f:
+			f.write(f"generations: {i}\tscore: {round(self.gen_score_min)}\n")
+			f.write(f"best layout:\n{self.gen_score_min_layout.reshape(3,12)}\n")
+
+	# this actions are reserved for gui (will be overridden by MainWorker)
+	def action_saved(self):
+		return False
+
+	def action_plot(self, i, val):
+		return
+
+	def action_keys(self, val):
+		return
+
+	def action_progressbar(self, val):
+		return
+
+	def run(self, iter_size):
+
+		self.log.info("started")
+		start_timer = time.perf_counter()
 
 		pop = self.pop_init()
 
+		gen_score_max = gen_score_last = 0
 		self.gen_score_min = sys.maxsize
-		gen_score_max = 0
-		gen_score_last = 0
-		for i in range(iter_size):
 
-			if self.__stop:
-				self.sendSaved.emit(self.gen_score_min, self.gen_score_min_layout)
+		score_dict_keys_sorted = np.array([0]* self.pop_size)
+
+		for i in range(iter_size):
+			if self.action_saved():
 				return
 
-			self.updateGenCount.emit(i+1)
-			self.updateGenLast.emit(gen_score_last)
-			print("pass:", i)
+			self.action_gen_count(i+1)
+
+			if score_dict_keys_sorted[0]:
+				gen_score_last = score_dict_keys_sorted[0]
 
 			score_dict = self.calc_fitness(pop)
 			score_dict_keys_sorted = np.sort([x for x in score_dict.keys()])
 
-			self.updateGenCurrent.emit(score_dict_keys_sorted[0])
+			self.action_gen_last(gen_score_last)
+			self.action_gen_current(score_dict_keys_sorted[0])
 			if score_dict_keys_sorted[0] < self.gen_score_min:
 				self.gen_score_min = score_dict_keys_sorted[0]
 				self.gen_score_min_layout = pop[score_dict[score_dict_keys_sorted[0]]].copy()
-				self.updateGenMin.emit(self.gen_score_min)
+			self.action_gen_min(self.gen_score_min)
 
 			if score_dict_keys_sorted[-1] > gen_score_max:
 				gen_score_max = score_dict_keys_sorted[-1]
-				self.updateGenMax.emit(gen_score_max)
+			self.action_gen_max(gen_score_max)
 
-			self.updatePlot.emit(i, score_dict_keys_sorted[0])
-			self.updateKeys.emit(pop[score_dict[score_dict_keys_sorted[0]]][:-1])
+			self.action_plot(i, score_dict_keys_sorted[0])
+			self.action_keys(pop[score_dict[score_dict_keys_sorted[0]]][:-1])
 
-			print("score_dict_keys_sorted:",score_dict_keys_sorted)
+			self.log.debug(f"score sorted: {score_dict_keys_sorted}")
 			new_pop = np.empty((0,36), 'U')
 
 			for _ in range(self.pop_size):
@@ -118,13 +136,13 @@ class MainWorker(QObject):
 				new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
 
 			pop = new_pop
-			gen_score_last = score_dict_keys_sorted[0]
 
-		finish = time.perf_counter()
+		end_timer = time.perf_counter()
+		self.log.debug(f"finished in {round(end_timer-start_timer)}s")
+		self.log.info("stopped")
+		self.action_save_prompt(iter_size, self.gen_score_min)
 
-		print(f"Finished in {round(finish-start)}s")
-
-	# only called one time per run, creates a randomly generated population of self.pop_size
+	# only called one time per run, creates a randomly generated population of pop_size
 	def pop_init(self):
 
 		gene_pool = list("abcdefghijklmnopqrstuvwxyz[];\',./<\\") # [ ] ; ' \ , . / <
@@ -159,9 +177,10 @@ class MainWorker(QObject):
 
 		score_dict = {}
 
-		processes = [None] * self.pop_size
 		manager = Manager()
 		scores = manager.list([None] * self.pop_size)
+
+		processes = [None] * self.pop_size
 
 		with open("corpus/corpus_filtered.txt", "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
@@ -176,13 +195,14 @@ class MainWorker(QObject):
 					for j in range(chr.shape[1]):
 						cord_map.update({chr[i,j]: { 0: i, 1: j}})
 
+				self.log.debug(f"pop: {p}")
 				processes[p] = Process(target=calc_score, args=(p, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias))
 				processes[p].start()
 
 		for i, p in enumerate(processes):
 			p.join()
 			score_dict.update({scores[i]: i})
-			self.updateProgressBar.emit(int((100*(i+1))/self.pop_size))
+			self.action_progressbar(int((100*(i+1))/self.pop_size))
 
 		return score_dict
 
@@ -227,11 +247,80 @@ class MainWorker(QObject):
 
 		return offspring
 
+class MainWorker(QObject, MainProgram):
 
+	# custom signals for updating gui
+	updateGenCount = pyqtSignal(int)
+	updateGenCurrent = pyqtSignal(float)
+	updateGenLast = pyqtSignal(float)
+	updateGenMin = pyqtSignal(float)
+	updateGenMax = pyqtSignal(float)
+	updateKeys = pyqtSignal(np.ndarray)
+	updatePlot = pyqtSignal(int, float)
+	updateProgressBar = pyqtSignal(int)
+
+	sendSaved = pyqtSignal(float, np.ndarray)
+
+	finished = pyqtSignal()
+	started = pyqtSignal()
+
+	def __init__(self, iter_size):
+		super(MainWorker, self).__init__()
+		self.iter_size = iter_size
+		self.__stop = False
+
+	# start and stop functions for ui interaction
+	@pyqtSlot()
+	def work(self):
+		self.started.emit()
+		self.run(self.iter_size)
+		self.finished.emit()
+
+	def stop(self):
+		self.__stop = True
+
+	def action_saved(self):
+		if self.__stop:
+			self.sendSaved.emit(self.gen_score_min, self.gen_score_min_layout)
+			return True
+
+		return False
+
+	def action_gen_count(self, val):
+		self.log.debug(f"iter:\t{val}")
+		self.updateGenCount.emit(val)
+
+	def action_gen_last(self, val):
+		self.log.debug(f"last min:\t{val}")
+		self.updateGenLast.emit(val)
+
+	def action_gen_current(self, val):
+		self.log.debug(f"current min:\t{val}")
+		self.updateGenCurrent.emit(val)
+
+	def action_gen_min(self, val):
+		self.log.debug(f"all time min:\t{val}")
+		self.updateGenMin.emit(val)
+
+	def action_gen_max(self, val):
+		self.log.debug(f"all time max:\t{val}")
+		self.updateGenMax.emit(val)
+
+	def action_plot(self, i, val):
+		self.updatePlot.emit(i, val)
+
+	def action_keys(self, val):
+		self.updateKeys.emit(val)
+
+	def action_progressbar(self, val):
+		self.updateProgressBar.emit(val)
+
+	# save prompt will not be used in the gui
+	def action_save_prompt(self, i, val):
+		return
 
 def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias):
 
-	print("pop:", index)
 	score = 0
 	last_region = last_y = last_x = last_hand = -1
 	for char in corpus:
@@ -292,9 +381,58 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 
 
 if __name__ == "__main__":
-	app = QApplication(sys.argv)
 
-	MainWindow = window.SetupMainwindow()
-	MainWindow.show()
+	parser = argparse.ArgumentParser(
+			prog="project-e",
+			description="Find the most efficient keyboard layout using the genetic algorithm.")
 
-	sys.exit(app.exec_())
+	parser.add_argument('-hl', '--headless', action='store_true', help='run the program without gui')
+	parser.add_argument('-v', '--verbose', action='store_true', help='print additional debugging information')
+	parser.add_argument('iter_size', type=int, nargs='?', default=0, help='number of iterations')
+	parser.add_argument('-y', '--auto-save', action='store_true', help='auto save the layout without prompt')
+	parser.add_argument('-o', '--output', type=str, default="layout.txt", help='save path (default=layout.txt)')
+	args = parser.parse_args()
+
+	arg_path = pathlib.PurePath(args.output).parent
+	pathlib.Path(arg_path).mkdir(parents=True, exist_ok=True)
+
+	log = logging.getLogger(__name__)
+	log.setLevel(logging.DEBUG)
+
+	pathlib.Path("logs").mkdir(exist_ok=True)
+	log_file_handler = logging.FileHandler(f"logs/log-{round(time.time())}.txt", mode='w', encoding='utf-8')
+	log_stream_handler = logging.StreamHandler(stream=sys.stdout)
+
+	formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+	log_file_handler.setFormatter(formatter)
+	log_stream_handler.setFormatter(formatter)
+
+	log_file_handler.setLevel(logging.INFO)
+	log_stream_handler.setLevel(logging.INFO)
+
+	if args.verbose:
+		log_file_handler.setLevel(logging.DEBUG)
+		log_stream_handler.setLevel(logging.DEBUG)
+
+	log.addHandler(log_file_handler)
+	log.addHandler(log_stream_handler)
+
+	if args.headless:
+		if not args.iter_size:
+			parser.error("number of iterations must be specified in headless mode")
+			sys.exit(1)
+
+		prog = MainProgram(output=args.output, auto_save=args.auto_save)
+		prog.run(args.iter_size)
+
+		log_stream_handler.close()
+		log_file_handler.close()
+
+	else:
+		app = QApplication(sys.argv)
+
+		MainWindow = window.SetupMainwindow(args.iter_size, args.output, args.auto_save)
+		MainWindow.show()
+
+		sys.exit(app.exec_())
+
