@@ -36,29 +36,15 @@ import mapgen
 import window
 
 class MainProgram(object):
-
+	""" main class of the program, runs standalone in headless mode and used as a template in gui mode """
 	def __init__(self, output=None, auto_save=False):
 		super(MainProgram, self).__init__()
 		self.pop_size = 10
+		self.layout_size = 35
 		self.output = output
 		self.auto_save = auto_save
 		self.log = logging.getLogger("__main__")
 		self.rng = default_rng()
-
-	def action_gen_count(self, val):
-		self.log.info(f"iter: {val}")
-
-	def action_gen_last(self, val):
-		self.log.debug(f"last min:\t{val}")
-
-	def action_gen_current(self, val):
-		self.log.debug(f"current min:\t{val}")
-
-	def action_gen_min(self, val):
-		self.log.debug(f"all time min:\t{val}")
-
-	def action_gen_max(self, val):
-		self.log.debug(f"all time max:\t{val}")
 
 	def action_save_prompt(self, i, val):
 		if not self.auto_save:
@@ -70,7 +56,22 @@ class MainProgram(object):
 			f.write(f"generations: {i}\tscore: {round(self.gen_score_min)}\n")
 			f.write(f"best layout:\n{self.gen_score_min_layout.reshape(3,12)}\n")
 
-	# this actions are reserved for gui (will be overridden by MainWorker)
+	# reserved template actions for the gui (will be overridden by MainWorker)
+	def action_gen_count(self, val):
+		return
+
+	def action_gen_last(self, val):
+		return
+
+	def action_gen_current(self, val):
+		return
+
+	def action_gen_min(self, val):
+		return
+
+	def action_gen_max(self, val):
+		return
+
 	def action_saved(self):
 		return False
 
@@ -84,15 +85,12 @@ class MainProgram(object):
 		return
 
 	def run(self, iter_size):
-
 		self.log.info("started")
 		start_timer = time.perf_counter()
 
 		pop = self.pop_init()
-
 		gen_score_max = gen_score_last = 0
 		self.gen_score_min = sys.maxsize
-
 		score_dict_keys_sorted = np.array([0]* self.pop_size)
 
 		for i in range(iter_size):
@@ -100,36 +98,42 @@ class MainProgram(object):
 				return
 
 			self.action_gen_count(i+1)
+			self.log.info(f"iter: {i+1}")
 
-			if score_dict_keys_sorted[0]:
+			if i > 0:
 				gen_score_last = score_dict_keys_sorted[0]
 
 			score_dict = self.calc_fitness(pop)
-			score_dict_keys_sorted = np.sort([x for x in score_dict.keys()])
+			# 1d numpy array with sorted scores (ascending)
+			score_dict_keys_sorted = np.sort(list(score_dict.keys()))
 
+			self.log.debug(f"last min:\t{gen_score_last}")
 			self.action_gen_last(gen_score_last)
+
+			self.log.debug(f"current min:\t{score_dict_keys_sorted[0]}")
 			self.action_gen_current(score_dict_keys_sorted[0])
+
 			if score_dict_keys_sorted[0] < self.gen_score_min:
 				self.gen_score_min = score_dict_keys_sorted[0]
 				self.gen_score_min_layout = pop[score_dict[score_dict_keys_sorted[0]]].copy()
+
+			self.log.debug(f"all time min:\t{self.gen_score_min}")
 			self.action_gen_min(self.gen_score_min)
 
 			if score_dict_keys_sorted[-1] > gen_score_max:
 				gen_score_max = score_dict_keys_sorted[-1]
+			self.log.debug(f"all time max:\t{gen_score_max}")
 			self.action_gen_max(gen_score_max)
 
 			self.action_plot(i, score_dict_keys_sorted[0])
 			self.action_keys(pop[score_dict[score_dict_keys_sorted[0]]][:-1])
-
 			self.log.debug(f"score sorted: {score_dict_keys_sorted}")
-			new_pop = np.empty((0,36), 'U')
 
+			new_pop = np.empty((0, self.layout_size+1), 'U')
 			for _ in range(self.pop_size):
 				chr1 = pop[score_dict[score_dict_keys_sorted[0]]]
 				chr2 = pop[score_dict[score_dict_keys_sorted[1]]]
-
 				p_cros = self.crossover(chr1, chr2)
-
 				if self.rng.integers(0,10) == 1:
 					p_cros = self.mutate(p_cros)
 
@@ -138,21 +142,19 @@ class MainProgram(object):
 			pop = new_pop
 
 		end_timer = time.perf_counter()
-		self.log.debug(f"finished in {round(end_timer-start_timer)}s")
 		self.log.info("stopped")
+		self.log.debug(f"finished in {round(end_timer-start_timer)}s")
 		self.action_save_prompt(iter_size, self.gen_score_min)
 
-	# only called one time per run, creates a randomly generated population of pop_size
 	def pop_init(self):
-
+		""" only called one time per run, creates a randomly generated population of pop_size """
+		# alphabet is 26 characters long that leaves 9 for the symbols (extras)
 		gene_pool = list("abcdefghijklmnopqrstuvwxyz[];\',./<\\") # [ ] ; ' \ , . / <
 
-		# every layout has 35 keys total + padding
-		pop = np.empty((0, 36), 'U')
+		# array structure: [["d", "x", "n"...], ["e","/", "b"...]...] 2d numpy array of shape (0, 36), 35 keys + 1 padding
+		pop = np.empty((0, self.layout_size+1), 'U')
 
 		for _ in range(self.pop_size):
-
-			# gene_pool is 26 characters long and that leaves 9 for the symbols (extras)
 			current = np.array(gene_pool, ndmin=2)
 
 			self.rng.shuffle(current, axis=1)
@@ -163,25 +165,26 @@ class MainProgram(object):
 		return pop
 
 	def calc_fitness(self, pop):
+		""" calculates fitness score for each member of the current population """
 
+		# predefined biagram map from mapgen
 		biagram_map = mapgen.biagram_map
-
 		# key pressing difficulity map according to experiments/assets/heatmap.png
 		key_bias = np.stack([
 							[  4, 2, 2, 2.5,  3.5,    5, 2.5,   2, 2, 3.5, 4.5, 4.5],
 							[1.5, 1, 1,   1, 1.75, 1.75,   1,   1, 1, 1.5,   3,   3],
 							[3.5, 4, 4, 2.5,  1.5,    2, 1.5, 2.5, 3,   4,   4,   0]
 							])
-
+		# same finger bias, TODO: find a value which represents its weight better
 		smf_bias = 10
 
+		# dict structure {'score of the layout': 'index of the layout in pop[]'} -> {float: int}
 		score_dict = {}
 
+		# we initalize a manager and create a shared resource to be used among processes
 		manager = Manager()
 		scores = manager.list([None] * self.pop_size)
-
 		processes = [None] * self.pop_size
-
 		with open("corpus/corpus_filtered.txt", "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
@@ -206,24 +209,22 @@ class MainProgram(object):
 
 		return score_dict
 
-	# when used, will swap two consecutive elements inside array, at a random index
 	def mutate(self, chr):
-		# array length - 1 so it doesn't overflow
-		rnd_int = self.rng.integers(0, 34)
+		""" swap two consecutive elements inside an array, at a random index """
+		rnd_int = self.rng.integers(0, self.layout_size-1)
 		chr[[rnd_int, rnd_int + 1]] = chr[[rnd_int + 1, rnd_int]]
-
 		return chr
 
 	def crossover(self, chr1, chr2):
-
-		rnd_idx = self.rng.integers(0,34)
-		rnd_len = self.rng.integers(0,34)
+		""" combines most efficient two layouts (index 0 and 1) into one and returns it """
+		rnd_idx = self.rng.integers(0, self.layout_size-1)
+		rnd_len = self.rng.integers(0, self.layout_size-1)
 
 		offspring = chr1.copy()
-		offspring[:35] = "_"
+		offspring[:self.layout_size] = "_"
 
 		for c in range(rnd_len):
-			if rnd_idx > 34:
+			if rnd_idx > self.layout_size-1:
 				rnd_idx = 0
 
 			offspring[rnd_idx] = chr1[c]
@@ -231,9 +232,9 @@ class MainProgram(object):
 
 		chr2_idx = 0
 		while "_" in offspring:
-			if chr2_idx > 34:
+			if chr2_idx > self.layout_size-1:
 				chr2_idx = 0
-			if rnd_idx > 34:
+			if rnd_idx > self.layout_size-1:
 				rnd_idx = 0
 
 			if chr2[chr2_idx] in offspring:
@@ -248,8 +249,8 @@ class MainProgram(object):
 		return offspring
 
 class MainWorker(QObject, MainProgram):
+	""" main class for the GUI thread """
 
-	# custom signals for updating gui
 	updateGenCount = pyqtSignal(int)
 	updateGenCurrent = pyqtSignal(float)
 	updateGenLast = pyqtSignal(float)
@@ -287,23 +288,18 @@ class MainWorker(QObject, MainProgram):
 		return False
 
 	def action_gen_count(self, val):
-		self.log.debug(f"iter:\t{val}")
 		self.updateGenCount.emit(val)
 
 	def action_gen_last(self, val):
-		self.log.debug(f"last min:\t{val}")
 		self.updateGenLast.emit(val)
 
 	def action_gen_current(self, val):
-		self.log.debug(f"current min:\t{val}")
 		self.updateGenCurrent.emit(val)
 
 	def action_gen_min(self, val):
-		self.log.debug(f"all time min:\t{val}")
 		self.updateGenMin.emit(val)
 
 	def action_gen_max(self, val):
-		self.log.debug(f"all time max:\t{val}")
 		self.updateGenMax.emit(val)
 
 	def action_plot(self, i, val):
@@ -320,7 +316,7 @@ class MainWorker(QObject, MainProgram):
 		return
 
 def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias):
-
+	""" calculates the fitness score for given pop member, it will run on a seperate process and after it finishes will update the shared resource 'scores' """
 	score = 0
 	last_region = last_y = last_x = last_hand = -1
 	for char in corpus:
@@ -334,16 +330,13 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 			region = cur_idx
 
 		if last_region == region:
-
 			if chr[last_y,last_x] == char:
 				score += (key_bias[last_y,last_x] + smf_bias)
-
 			else:
 				score += (path_map[chr[last_y,last_x]][char]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
 				last_x = cur_idx
 				last_y = cur_idy
 		else:
-
 			if region < 5:
 				cur_hand = 0
 			else:
@@ -379,7 +372,6 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 
 	scores[index] = score
 
-
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(
@@ -393,8 +385,8 @@ if __name__ == "__main__":
 	parser.add_argument('-o', '--output', type=str, default="layout.txt", help='save path (default=layout.txt)')
 	args = parser.parse_args()
 
-	arg_path = pathlib.PurePath(args.output).parent
-	pathlib.Path(arg_path).mkdir(parents=True, exist_ok=True)
+	output_path = pathlib.PurePath(args.output).parent
+	pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
 	log = logging.getLogger(__name__)
 	log.setLevel(logging.DEBUG)
