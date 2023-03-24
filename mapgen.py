@@ -1,4 +1,4 @@
-#	project-e find most the efficient keyboard layout using the genetic algorithm
+#	klena: find the most efficient keyboard layout using the genetic algorithm
 #		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify

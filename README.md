@@ -1,9 +1,9 @@
-# project-e [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+# klena (also know as project-e) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Find the most efficient keyboard layout using the genetic algorithm.
 
 ## How It Works?
-The project uses genetic algorithms' main principles.
+Klena uses genetic algorithms' main principles.
 - Create a population consisting of 10 randomly generated layouts from the gene pool (abcdefghijklmnopqrstuvwxyz[];',./<\)
 - Calculate a fitness score for each layout.
 - Create 10 offspring from the two fittest layouts (the lower the fitness score, the better).

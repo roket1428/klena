@@ -1,4 +1,4 @@
-#	project-e find the most efficient keyboard layout using the genetic algorithm
+#	klena: find the most efficient keyboard layout using the genetic algorithm
 #		Copyright (C) 2023 roket1428 <meorhan@protonmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -375,7 +375,7 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(
-			prog="project-e",
+			prog="klena",
 			description="Find the most efficient keyboard layout using the genetic algorithm.")
 
 	parser.add_argument('-hl', '--headless', action='store_true', help='run the program without gui')
