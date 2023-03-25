@@ -31,9 +31,8 @@ from numpy.random import default_rng
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
-# local modules
-import mapgen
-import window
+sys.path.insert(0, str(pathlib.PurePath(__file__).parent.parent))
+from klena import mapgen, window
 
 class MainProgram(object):
 	""" main class of the program, runs standalone in headless mode and used as a template in gui mode """
@@ -84,7 +83,7 @@ class MainProgram(object):
 	def action_progressbar(self, val):
 		return
 
-	def run(self, iter_size):
+	def run(self, iter_size, dataset):
 		self.log.info("started")
 		start_timer = time.perf_counter()
 
@@ -103,7 +102,7 @@ class MainProgram(object):
 			if i > 0:
 				gen_score_last = score_dict_keys_sorted[0]
 
-			score_dict = self.calc_fitness(pop)
+			score_dict = self.calc_fitness(pop, dataset)
 			# 1d numpy array with sorted scores (ascending)
 			score_dict_keys_sorted = np.sort(list(score_dict.keys()))
 
@@ -135,7 +134,7 @@ class MainProgram(object):
 				chr2 = pop[score_dict[score_dict_keys_sorted[1]]]
 				p_cros = self.crossover(chr1, chr2)
 				if self.rng.integers(0,10) == 1:
-					p_cros = self.mutate(p_cros)
+					self.mutate(p_cros)
 
 				new_pop = np.concatenate((new_pop, np.array(p_cros, ndmin=2)))
 
@@ -143,7 +142,7 @@ class MainProgram(object):
 
 		end_timer = time.perf_counter()
 		self.log.info("stopped")
-		self.log.debug(f"finished in {round(end_timer-start_timer)}s")
+		self.log.debug(f"finished in {end_timer-start_timer}s")
 		self.action_save_prompt(iter_size, self.gen_score_min)
 
 	def pop_init(self):
@@ -164,12 +163,12 @@ class MainProgram(object):
 
 		return pop
 
-	def calc_fitness(self, pop):
+	def calc_fitness(self, pop, dataset):
 		""" calculates fitness score for each member of the current population """
 
 		# predefined biagram map from mapgen
 		biagram_map = mapgen.biagram_map
-		# key pressing difficulity map according to experiments/assets/heatmap.png
+		# key pressing difficulity map according to ../experiments/assets/heatmap.png
 		key_bias = np.stack([
 							[  4, 2, 2, 2.5,  3.5,    5, 2.5,   2, 2, 3.5, 4.5, 4.5],
 							[1.5, 1, 1,   1, 1.75, 1.75,   1,   1, 1, 1.5,   3,   3],
@@ -185,21 +184,21 @@ class MainProgram(object):
 		manager = Manager()
 		scores = manager.list([None] * self.pop_size)
 		processes = [None] * self.pop_size
-		with open("corpus/corpus_filtered.txt", "r") as f:
+		with open(dataset, "r") as f:
 			corpus = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
 			for p in range(self.pop_size):
 
-				chr = np.array(pop[p].reshape(3,12), bytes)
-				path_map = mapgen.path_mapgen(chr)
+				chrm = np.array(pop[p].reshape(3,12), bytes)
+				path_map = mapgen.path_mapgen(chrm)
 
 				cord_map = {}
-				for i in range(chr.shape[0]):
-					for j in range(chr.shape[1]):
-						cord_map.update({chr[i,j]: { 0: i, 1: j}})
+				for i in range(chrm.shape[0]):
+					for j in range(chrm.shape[1]):
+						cord_map.update({chrm[i,j]: { 0: i, 1: j}})
 
 				self.log.debug(f"pop: {p}")
-				processes[p] = Process(target=calc_score, args=(p, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias))
+				processes[p] = Process(target=calc_score, args=(p, scores, chrm, corpus, cord_map, path_map, biagram_map, key_bias, smf_bias))
 				processes[p].start()
 
 		for i, p in enumerate(processes):
@@ -209,11 +208,10 @@ class MainProgram(object):
 
 		return score_dict
 
-	def mutate(self, chr):
+	def mutate(self, chr1):
 		""" swap two consecutive elements inside an array, at a random index """
 		rnd_int = self.rng.integers(0, self.layout_size-1)
-		chr[[rnd_int, rnd_int + 1]] = chr[[rnd_int + 1, rnd_int]]
-		return chr
+		chr1[[rnd_int, rnd_int + 1]] = chr1[[rnd_int + 1, rnd_int]]
 
 	def crossover(self, chr1, chr2):
 		""" combines most efficient two layouts (index 0 and 1) into one and returns it """
@@ -265,8 +263,9 @@ class MainWorker(QObject, MainProgram):
 	finished = pyqtSignal()
 	started = pyqtSignal()
 
-	def __init__(self, iter_size):
+	def __init__(self, iter_size, dataset):
 		super(MainWorker, self).__init__()
+		self.dataset = dataset
 		self.iter_size = iter_size
 		self.__stop = False
 
@@ -274,7 +273,7 @@ class MainWorker(QObject, MainProgram):
 	@pyqtSlot()
 	def work(self):
 		self.started.emit()
-		self.run(self.iter_size)
+		self.run(self.iter_size, self.dataset)
 		self.finished.emit()
 
 	def stop(self):
@@ -315,7 +314,7 @@ class MainWorker(QObject, MainProgram):
 	def action_save_prompt(self, i, val):
 		return
 
-def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_bias, smf_bias):
+def calc_score(index, scores, chrm, corpus, cord_map, path_map, biagram_map, key_bias, smf_bias):
 	""" calculates the fitness score for given pop member, it will run on a seperate process and after it finishes will update the shared resource 'scores' """
 	score = 0
 	last_region = last_y = last_x = last_hand = -1
@@ -330,10 +329,10 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 			region = cur_idx
 
 		if last_region == region:
-			if chr[last_y,last_x] == char:
+			if chrm[last_y,last_x] == char:
 				score += (key_bias[last_y,last_x] + smf_bias)
 			else:
-				score += (path_map[chr[last_y,last_x]][char]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
+				score += (path_map[chrm[last_y,last_x]][char]*2 + key_bias[cur_idy,cur_idx] + smf_bias)
 				last_x = cur_idx
 				last_y = cur_idy
 		else:
@@ -352,18 +351,18 @@ def calc_score(index, scores, chr, cord_map, corpus, path_map, biagram_map, key_
 				start_x = region
 
 			if last_y != -1:
-				biagram = f"{chr[last_y,last_x]}{char}"
+				biagram = f"{chrm[last_y,last_x]}{char}"
 				if biagram_map.get(biagram) != None and last_y == cur_idy:
 					score -= (biagram_map[biagram]** 2)
 
-			if chr[1,start_x] == char:
+			if chrm[1,start_x] == char:
 				score += key_bias[1,start_x]
 
 			else:
 				if last_hand != -1 and last_hand != cur_hand:
-					score -= (path_map[chr[1,start_x]][char] * 0.5)
+					score -= (path_map[chrm[1,start_x]][char] * 0.5)
 
-				score += (path_map[chr[1,start_x]][char]*2 + key_bias[cur_idy,cur_idx])
+				score += (path_map[chrm[1,start_x]][char]*2 + key_bias[cur_idy,cur_idx])
 
 				last_hand = cur_hand
 				last_region = region
@@ -383,6 +382,7 @@ if __name__ == "__main__":
 	parser.add_argument('iter_size', type=int, nargs='?', default=0, help='number of iterations')
 	parser.add_argument('-y', '--auto-save', action='store_true', help='auto save the layout without prompt')
 	parser.add_argument('-o', '--output', type=str, default="layout.txt", help='save path (default=layout.txt)')
+	parser.add_argument('-i', '--dataset', type=str, default="corpus/corpus_test.txt", help='corpus path (default=corpus/corpus_test.txt)')
 	args = parser.parse_args()
 
 	output_path = pathlib.PurePath(args.output).parent
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 			sys.exit(1)
 
 		prog = MainProgram(output=args.output, auto_save=args.auto_save)
-		prog.run(args.iter_size)
+		prog.run(args.iter_size, args.dataset)
 
 		log_stream_handler.close()
 		log_file_handler.close()
@@ -423,7 +423,7 @@ if __name__ == "__main__":
 	else:
 		app = QApplication(sys.argv)
 
-		MainWindow = window.SetupMainwindow(args.iter_size, args.output, args.auto_save)
+		MainWindow = window.SetupMainwindow(iter_size=args.iter_size, dataset=args.dataset, output=args.output, auto_save=args.auto_save)
 		MainWindow.show()
 
 		sys.exit(app.exec_())

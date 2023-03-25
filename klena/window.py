@@ -26,8 +26,7 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import QThread, pyqtSlot
 
 # local modules
-import gui
-from main import MainWorker
+from klena import gui, main
 
 # inherited from auto generated qt-designer class to be used as an object in setup_mainwindow
 class UIObject(gui.Ui_MainWindow):
@@ -37,12 +36,13 @@ class UIObject(gui.Ui_MainWindow):
 
 class SetupMainwindow(QMainWindow):
 
-	def __init__(self, iter_size=0, output=None, auto_save=False):
+	def __init__(self, iter_size=0, dataset=None, output=None, auto_save=False):
 		super().__init__()
 
 		self.ui = UIObject(self)
 
 		self.runcount = 0
+		self.dataset = dataset
 		self.output = output
 		self.auto_save = auto_save
 		self.iter_size = iter_size
@@ -165,13 +165,12 @@ class SetupMainwindow(QMainWindow):
 
 		# create the worker and a qthread instance and move the worker to the said instance
 		self.thread = QThread()
-		self.worker = MainWorker(self.iter_size)
+		self.worker = main.MainWorker(self.iter_size, self.dataset)
 		self.worker.moveToThread(self.thread)
 
+		# connect thread signals
 		self.worker.started.connect(self.workerStarted)
 		self.worker.finished.connect(self.workerFinished)
-
-		# connect gui signals
 		self.worker.updateGenCount.connect(self.workerUpdateGenCount)
 		self.worker.updateGenCurrent.connect(self.workerUpdateGenCurrent)
 		self.worker.updateKeys.connect(self.workerUpdateKeys)
@@ -180,9 +179,10 @@ class SetupMainwindow(QMainWindow):
 		self.worker.updateGenMax.connect(self.workerUpdateGenMax)
 		self.worker.updatePlot.connect(self.workerUpdatePlot)
 		self.worker.updateProgressBar.connect(self.workerUpdateProgress)
-
 		self.worker.sendSaved.connect(self.receiveSaved)
 		self.thread.started.connect(self.worker.work)
+
+		# start the thread
 		self.thread.start()
 
 	def stopButtonClicked(self):
