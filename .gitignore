@@ -4,5 +4,4 @@
 .vscode
 __pycache__
 venv
-corpus.txt
 layout.txt

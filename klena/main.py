@@ -168,7 +168,7 @@ class MainProgram(object):
 
 		# predefined biagram map from mapgen
 		biagram_map = mapgen.biagram_map
-		# key pressing difficulity map according to ../experiments/assets/heatmap.png
+		# key pressing difficulity map according to assets/heatmap.png
 		key_bias = np.stack([
 							[  4, 2, 2, 2.5,  3.5,    5, 2.5,   2, 2, 3.5, 4.5, 4.5],
 							[1.5, 1, 1,   1, 1.75, 1.75,   1,   1, 1, 1.5,   3,   3],
@@ -382,7 +382,7 @@ if __name__ == "__main__":
 	parser.add_argument('iter_size', type=int, nargs='?', default=0, help='number of iterations')
 	parser.add_argument('-y', '--auto-save', action='store_true', help='auto save the layout without prompt')
 	parser.add_argument('-o', '--output', type=str, default="layout.txt", help='save path (default=layout.txt)')
-	parser.add_argument('-i', '--dataset', type=str, default="corpus/corpus_test.txt", help='corpus path (default=corpus/corpus_test.txt)')
+	parser.add_argument('-i', '--dataset', type=str, default="corpus/corpus.txt", help='corpus path (default=corpus/corpus.txt)')
 	args = parser.parse_args()
 
 	output_path = pathlib.PurePath(args.output).parent
